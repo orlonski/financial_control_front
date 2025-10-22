@@ -10,6 +10,12 @@ export default defineConfig({
       "@": fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  base: '/',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
+  },
   server: {
     port: 5173,
     proxy: {
@@ -20,12 +26,8 @@ export default defineConfig({
     },
   },
   preview: {
-    host: true,
+    host: '0.0.0.0',
     port: 5173,
-    strictPort: true,
-    allowedHosts: [
-      'evolution-financial-control-front.zj8v6e.easypanel.host',
-      '.easypanel.host', // Permite qualquer subdomínio do easypanel.host
-    ],
+    strictPort: false,
   },
 })
