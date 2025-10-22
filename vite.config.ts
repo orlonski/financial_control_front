@@ -29,5 +29,10 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: false,
+    allowedHosts: [
+      'evolution-financial-control-front.zj8v6e.easypanel.host',
+      '.easypanel.host',
+      'localhost',
+    ],
   },
 })
