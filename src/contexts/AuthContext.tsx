@@ -22,25 +22,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedToken = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
 
-    if (storedToken && storedUser) {
-      setToken(storedToken)
-      setUser(JSON.parse(storedUser))
-      
-      // Verify token is still valid
-      authApi.getMe()
-        .then(({ user }) => {
-          setUser(user)
-        })
-        .catch(() => {
-          // Token is invalid, clear storage
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          setToken(null)
-          setUser(null)
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
+    if (storedToken && storedUser && storedUser !== 'undefined') {
+      try {
+        setToken(storedToken)
+        setUser(JSON.parse(storedUser))
+
+        // Verify token is still valid
+        authApi.getMe()
+          .then(({ user }) => {
+            setUser(user)
+          })
+          .catch(() => {
+            // Token is invalid, clear storage
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            setToken(null)
+            setUser(null)
+          })
+          .finally(() => {
+            setIsLoading(false)
+          })
+      } catch (error) {
+        // Invalid JSON in localStorage, clear it
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setIsLoading(false)
+      }
     } else {
       setIsLoading(false)
     }
