@@ -1,21 +1,26 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { reportsApi } from '@/services/api'
+import { reportsApi, accountsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
 import { ChevronLeft, ChevronRight, Calendar, TrendingUp, TrendingDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import type { MonthlyStatement } from '@/types'
 
 export default function StatementPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
 
   const { data: statement, isLoading } = useQuery({
-    queryKey: ['monthly-statement', selectedYear, selectedMonth],
-    queryFn: () => reportsApi.getMonthlyStatement(selectedYear, selectedMonth),
+    queryKey: ['monthly-statement', selectedYear, selectedMonth, selectedAccountId],
+    queryFn: () => reportsApi.getMonthlyStatement(selectedYear, selectedMonth, selectedAccountId || undefined),
+  })
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: accountsApi.getAll,
   })
 
   const currentDate = new Date()
@@ -126,6 +131,17 @@ export default function StatementPage() {
                   }))}
                   value={selectedYear.toString()}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                />
+                <Select
+                  options={[
+                    { value: '', label: 'Todas as contas' },
+                    ...accounts.map(account => ({
+                      value: account.id,
+                      label: account.name
+                    }))
+                  ]}
+                  value={selectedAccountId}
+                  onChange={(e) => setSelectedAccountId(e.target.value)}
                 />
               </div>
 

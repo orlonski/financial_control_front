@@ -235,9 +235,9 @@ export const transfersApi = {
 
 // Reports API
 export const reportsApi = {
-  getMonthlyStatement: async (year: number, month: number): Promise<MonthlyStatement> => {
+  getMonthlyStatement: async (year: number, month: number, accountId?: string): Promise<MonthlyStatement> => {
     const response = await api.get('/reports/monthly-statement', {
-      params: { year, month }
+      params: { year, month, accountId }
     })
     return response.data
   },
