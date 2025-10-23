@@ -7,6 +7,9 @@ import AccountsPage from '@/pages/AccountsPage'
 import CategoriesPage from '@/pages/CategoriesPage'
 import CreditCardsPage from '@/pages/CreditCardsPage'
 import TransactionsPage from '@/pages/TransactionsPage'
+import NewTransactionPage from '@/pages/NewTransactionPage'
+import NewInstallmentPage from '@/pages/NewInstallmentPage'
+import EditTransactionPage from '@/pages/EditTransactionPage'
 import TransfersPage from '@/pages/TransfersPage'
 import StatementPage from '@/pages/StatementPage'
 import ReportsPage from '@/pages/ReportsPage'
@@ -42,6 +45,9 @@ function App() {
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/credit-cards" element={<CreditCardsPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/transactions/new" element={<NewTransactionPage />} />
+        <Route path="/transactions/installment" element={<NewInstallmentPage />} />
+        <Route path="/transactions/:id/edit" element={<EditTransactionPage />} />
         <Route path="/transfers" element={<TransfersPage />} />
         <Route path="/statement" element={<StatementPage />} />
         <Route path="/reports" element={<ReportsPage />} />
