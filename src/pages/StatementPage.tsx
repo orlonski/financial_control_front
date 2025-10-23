@@ -214,7 +214,7 @@ export default function StatementPage() {
                         Dia {dayBalance.day}
                       </CardTitle>
                       <CardDescription>
-                        {format(new Date(dayBalance.date), 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+                        {format(new Date(dayBalance.date + 'T12:00:00'), 'EEEE, dd/MM/yyyy', { locale: ptBR })}
                       </CardDescription>
                     </div>
                     <div className="text-right">
