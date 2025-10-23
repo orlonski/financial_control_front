@@ -97,28 +97,29 @@ export default function ReportsPage() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-4">
-              <div className="flex space-x-2">
-                <Button
-                  variant={reportType === 'category' ? 'default' : 'outline'}
-                  onClick={() => setReportType('category')}
-                >
-                  <PieChart className="h-4 w-4 mr-2" />
-                  Por Categoria
-                </Button>
-                <Button
-                  variant={reportType === 'cashflow' ? 'default' : 'outline'}
-                  onClick={() => setReportType('cashflow')}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Fluxo de Caixa
-                </Button>
-              </div>
+          <div className="flex flex-col space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={reportType === 'category' ? 'default' : 'outline'}
+                onClick={() => setReportType('category')}
+                className="w-full"
+              >
+                <PieChart className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Por </span>Categoria
+              </Button>
+              <Button
+                variant={reportType === 'cashflow' ? 'default' : 'outline'}
+                onClick={() => setReportType('cashflow')}
+                className="w-full"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Fluxo<span className="hidden sm:inline"> de Caixa</span>
+              </Button>
             </div>
-            
-            <div className="flex items-center space-x-2">
+
+            <div className="grid grid-cols-2 gap-2">
               <Select
+                label="Mês"
                 options={months.map(month => ({
                   value: month.value.toString(),
                   label: month.label
@@ -127,6 +128,7 @@ export default function ReportsPage() {
                 onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
               />
               <Select
+                label="Ano"
                 options={years.map(year => ({
                   value: year.toString(),
                   label: year.toString()
@@ -228,31 +230,31 @@ export default function ReportsPage() {
           {/* Category List */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Detalhamento por Categoria</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base sm:text-lg">Detalhamento por Categoria</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Lista completa de gastos por categoria
               </CardDescription>
             </CardHeader>
             <CardContent>
               {categoryReport.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {categoryReport.map((item, index) => (
-                    <div key={item.category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
+                    <div key={item.category.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                         <div
-                          className="w-4 h-4 rounded-full"
+                          className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
-                        <span className="font-medium">{item.category.name}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="font-medium text-sm sm:text-base truncate">{item.category.name}</span>
+                        <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
                           {item.count} transação{item.count !== 1 ? 'ões' : ''}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-lg">
+                      <div className="text-left sm:text-right pl-5 sm:pl-0">
+                        <div className="font-bold text-base sm:text-lg">
                           R$ {item.total.toLocaleString('pt-BR')}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs sm:text-sm text-gray-500">
                           {((item.total / categoryReport.reduce((sum, cat) => sum + cat.total, 0)) * 100).toFixed(1)}% do total
                         </div>
                       </div>
@@ -260,7 +262,7 @@ export default function ReportsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-sm sm:text-base text-gray-500">
                   Nenhuma categoria com gastos no período selecionado
                 </div>
               )}
@@ -335,14 +337,14 @@ export default function ReportsPage() {
 
           {/* Summary Cards */}
           {cashFlowData.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Receitas</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Receitas</CardTitle>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-base sm:text-2xl font-bold text-green-600">
                     R$ {cashFlowData.reduce((sum, item) => sum + item.income, 0).toLocaleString('pt-BR')}
                   </div>
                 </CardContent>
@@ -350,11 +352,11 @@ export default function ReportsPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Despesas</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-red-600" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Despesas</CardTitle>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-base sm:text-2xl font-bold text-red-600">
                     R$ {cashFlowData.reduce((sum, item) => sum + item.expense, 0).toLocaleString('pt-BR')}
                   </div>
                 </CardContent>
@@ -362,13 +364,13 @@ export default function ReportsPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Saldo Final</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Saldo Final</CardTitle>
+                  <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${
-                    cashFlowData[cashFlowData.length - 1]?.cumulativeBalance >= 0 
-                      ? 'text-green-600' 
+                  <div className={`text-base sm:text-2xl font-bold ${
+                    cashFlowData[cashFlowData.length - 1]?.cumulativeBalance >= 0
+                      ? 'text-green-600'
                       : 'text-red-600'
                   }`}>
                     R$ {(cashFlowData[cashFlowData.length - 1]?.cumulativeBalance || 0).toLocaleString('pt-BR')}
@@ -378,17 +380,17 @@ export default function ReportsPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Resultado</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Resultado</CardTitle>
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${
-                    (cashFlowData.reduce((sum, item) => sum + item.income, 0) - 
-                     cashFlowData.reduce((sum, item) => sum + item.expense, 0)) >= 0 
-                      ? 'text-green-600' 
+                  <div className={`text-base sm:text-2xl font-bold ${
+                    (cashFlowData.reduce((sum, item) => sum + item.income, 0) -
+                     cashFlowData.reduce((sum, item) => sum + item.expense, 0)) >= 0
+                      ? 'text-green-600'
                       : 'text-red-600'
                   }`}>
-                    R$ {(cashFlowData.reduce((sum, item) => sum + item.income, 0) - 
+                    R$ {(cashFlowData.reduce((sum, item) => sum + item.income, 0) -
                          cashFlowData.reduce((sum, item) => sum + item.expense, 0)).toLocaleString('pt-BR')}
                   </div>
                 </CardContent>

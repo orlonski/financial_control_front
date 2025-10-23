@@ -105,8 +105,8 @@ export default function StatementPage() {
       {/* Month Navigation */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between">
               <Button
                 variant="outline"
                 size="icon"
@@ -114,35 +114,11 @@ export default function StatementPage() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              
-              <div className="flex items-center space-x-2">
-                <Select
-                  options={months.map(month => ({
-                    value: month.value.toString(),
-                    label: month.label
-                  }))}
-                  value={selectedMonth.toString()}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                />
-                <Select
-                  options={years.map(year => ({
-                    value: year.toString(),
-                    label: year.toString()
-                  }))}
-                  value={selectedYear.toString()}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                />
-                <Select
-                  options={[
-                    { value: '', label: 'Todas as contas' },
-                    ...accounts.map(account => ({
-                      value: account.id,
-                      label: account.name
-                    }))
-                  ]}
-                  value={selectedAccountId}
-                  onChange={(e) => setSelectedAccountId(e.target.value)}
-                />
+
+              <div className="text-center">
+                <div className="text-sm sm:text-base font-medium text-gray-900">
+                  {months[selectedMonth - 1].label} de {selectedYear}
+                </div>
               </div>
 
               <Button
@@ -154,10 +130,37 @@ export default function StatementPage() {
               </Button>
             </div>
 
-            <div className="text-right">
-              <div className="text-sm text-gray-600">
-                {months[selectedMonth - 1].label} de {selectedYear}
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Select
+                label="Mês"
+                options={months.map(month => ({
+                  value: month.value.toString(),
+                  label: month.label
+                }))}
+                value={selectedMonth.toString()}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              />
+              <Select
+                label="Ano"
+                options={years.map(year => ({
+                  value: year.toString(),
+                  label: year.toString()
+                }))}
+                value={selectedYear.toString()}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              />
+              <Select
+                label="Conta"
+                options={[
+                  { value: '', label: 'Todas as contas' },
+                  ...accounts.map(account => ({
+                    value: account.id,
+                    label: account.name
+                  }))
+                ]}
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+              />
             </div>
           </div>
         </CardHeader>
@@ -223,18 +226,18 @@ export default function StatementPage() {
           <div className="space-y-4">
             {statement.dailyBalances.map((dayBalance) => (
               <Card key={dayBalance.date}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                      <CardTitle className="text-lg">
+                      <CardTitle className="text-base sm:text-lg">
                         Dia {dayBalance.day}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-xs sm:text-sm">
                         {format(new Date(dayBalance.date + 'T12:00:00'), 'EEEE, dd/MM/yyyy', { locale: ptBR })}
                       </CardDescription>
                     </div>
-                    <div className="text-right">
-                      <div className={`text-lg font-bold ${
+                    <div className="text-left sm:text-right">
+                      <div className={`text-base sm:text-lg font-bold ${
                         dayBalance.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {dayBalance.totalBalance.toLocaleString('pt-BR', {
@@ -245,29 +248,34 @@ export default function StatementPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   {/* Transactions */}
                   {dayBalance.transactions.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Transações</h4>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-2">Transações</h4>
                       <div className="space-y-2">
                         {dayBalance.transactions.map((transaction) => (
-                          <div key={transaction.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${
+                          <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-gray-50 rounded">
+                            <div className="flex items-start space-x-2 min-w-0 flex-1">
+                              <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
                                 transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
                               }`} />
-                              <span className="text-sm">{transaction.description}</span>
-                              <span className="text-xs text-gray-500">
-                                {transaction.category.name}
-                              </span>
-                              {transaction.creditCard && (
-                                <span className="text-xs text-blue-600">
-                                  💳 {transaction.creditCard.name}
-                                </span>
-                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-medium break-words">{transaction.description}</div>
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
+                                  <span className="text-xs text-gray-500">{transaction.category.name}</span>
+                                  {transaction.creditCard && (
+                                    <>
+                                      <span className="text-xs text-gray-400">•</span>
+                                      <span className="text-xs text-blue-600 flex items-center">
+                                        💳 {transaction.creditCard.name}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div className={`text-sm font-medium ${
+                            <div className={`text-sm sm:text-base font-medium flex-shrink-0 ${
                               transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
                             }`}>
                               {transaction.type === 'INCOME' ? '+' : '-'}
@@ -285,22 +293,24 @@ export default function StatementPage() {
                   {/* Transfers */}
                   {dayBalance.transfers.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Transferências</h4>
+                      <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-2">Transferências</h4>
                       <div className="space-y-2">
                         {dayBalance.transfers.map((transfer) => (
-                          <div key={transfer.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500" />
-                              <span className="text-sm">
-                                {transfer.fromAccount.name} → {transfer.toAccount.name}
-                              </span>
-                              {transfer.description && (
-                                <span className="text-xs text-gray-500">
-                                  {transfer.description}
-                                </span>
-                              )}
+                          <div key={transfer.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-blue-50 rounded">
+                            <div className="flex items-start space-x-2 min-w-0 flex-1">
+                              <div className="w-2 h-2 rounded-full bg-blue-500 mt-1 flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm break-words">
+                                  {transfer.fromAccount.name} → {transfer.toAccount.name}
+                                </div>
+                                {transfer.description && (
+                                  <div className="text-xs text-gray-500 mt-1 break-words">
+                                    {transfer.description}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm sm:text-base font-medium text-gray-900 flex-shrink-0">
                               {transfer.amount.toLocaleString('pt-BR', {
                                 style: 'currency',
                                 currency: 'BRL',
@@ -313,13 +323,13 @@ export default function StatementPage() {
                   )}
 
                   {/* Account Balances */}
-                  <div className="mt-4 pt-4 border-t">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Saldos por Conta</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="pt-4 border-t">
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-3">Saldos por Conta</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {statement.accounts.map((account) => (
-                        <div key={account.id} className="text-center">
-                          <div className="text-xs text-gray-600">{account.name}</div>
-                          <div className={`text-sm font-medium ${
+                        <div key={account.id} className="text-center p-2 bg-gray-50 rounded">
+                          <div className="text-xs text-gray-600 truncate mb-1">{account.name}</div>
+                          <div className={`text-xs sm:text-sm font-medium ${
                             (dayBalance.balances[account.id] || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {(dayBalance.balances[account.id] || 0).toLocaleString('pt-BR', {

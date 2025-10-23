@@ -218,19 +218,19 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transações</h1>
           <p className="text-gray-600">Gerencie suas receitas e despesas</p>
         </div>
-        <div className="flex space-x-2">
-          <Button onClick={handleCreateInstallment} disabled={creditCards.length === 0}>
-            <CreditCard className="h-4 w-4 mr-2" />
-            Parcelamento
-          </Button>
-          <Button onClick={handleCreate}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={handleCreate} className="flex-1 sm:flex-none">
             <Plus className="h-4 w-4 mr-2" />
             Nova Transação
+          </Button>
+          <Button onClick={handleCreateInstallment} disabled={creditCards.length === 0} variant="outline" className="flex-1 sm:flex-none">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Parcelamento
           </Button>
         </div>
       </div>
@@ -255,64 +255,68 @@ export default function TransactionsPage() {
         <div className="space-y-4">
           {transactions.map((transaction) => (
             <Card key={transaction.id} className="relative">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
-                    }`} />
-                    <div>
-                      <CardTitle className="text-lg">{transaction.description}</CardTitle>
-                      <CardDescription className="flex items-center space-x-2">
-                        <span>{transaction.category.name}</span>
-                        <span>•</span>
-                        <span>{transaction.account.name}</span>
-                        {transaction.creditCard && (
-                          <>
-                            <span>•</span>
-                            <span className="flex items-center">
-                              <CreditCard className="h-3 w-3 mr-1" />
-                              {transaction.creditCard.name}
-                            </span>
-                          </>
-                        )}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <div className={`text-lg font-bold ${
-                        transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'INCOME' ? '+' : '-'}
-                        {transaction.amount.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
+              <CardHeader className="pb-3">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start space-x-3 min-w-0 flex-1">
+                      <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
+                        transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base sm:text-lg break-words">{transaction.description}</CardTitle>
+                        <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs sm:text-sm mt-1">
+                          <span className="truncate">{transaction.category.name}</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="truncate">{transaction.account.name}</span>
+                          {transaction.creditCard && (
+                            <>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="flex items-center truncate">
+                                <CreditCard className="h-3 w-3 mr-1 flex-shrink-0" />
+                                {transaction.creditCard.name}
+                              </span>
+                            </>
+                          )}
+                        </CardDescription>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
+                    <div className="flex items-start space-x-1 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => handleEdit(transaction)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => handleDelete(transaction.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className={`text-lg sm:text-xl font-bold ${
+                      transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {transaction.type === 'INCOME' ? '+' : '-'}
+                      {transaction.amount.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-500 flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
                     </div>
                   </div>
                 </div>
+
                 {transaction.installmentNumber && transaction.totalInstallments && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -321,7 +325,7 @@ export default function TransactionsPage() {
                   </div>
                 )}
                 {transaction.notes && (
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="mt-2 text-sm text-gray-600 break-words">
                     {transaction.notes}
                   </div>
                 )}
