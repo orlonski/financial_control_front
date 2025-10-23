@@ -192,7 +192,6 @@ export default function TransactionsPage() {
 
   // Filter categories by transaction type
   const filteredCategories = categories.filter(cat => cat.type === selectedType)
-  const filteredCreditCards = creditCards.filter(card => card.accountId === selectedAccountId)
 
   if (isLoading) {
     return (
@@ -404,7 +403,7 @@ export default function TransactionsPage() {
               label="Cartão de Crédito (opcional)"
               options={[
                 { value: '', label: 'Não usar cartão' },
-                ...filteredCreditCards.map(card => ({
+                ...creditCards.map(card => ({
                   value: card.id,
                   label: card.name
                 }))
