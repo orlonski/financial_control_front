@@ -105,7 +105,7 @@ export default function ReportsPage() {
                 className="w-full"
               >
                 <PieChart className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Por </span>Categoria
+                Por Categoria
               </Button>
               <Button
                 variant={reportType === 'cashflow' ? 'default' : 'outline'}
@@ -113,7 +113,7 @@ export default function ReportsPage() {
                 className="w-full"
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Fluxo<span className="hidden sm:inline"> de Caixa</span>
+                Fluxo de Caixa
               </Button>
             </div>
 
@@ -247,7 +247,7 @@ export default function ReportsPage() {
                         />
                         <span className="font-medium text-sm sm:text-base truncate">{item.category.name}</span>
                         <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                          {item.count} transação{item.count !== 1 ? 'ões' : ''}
+                          {item.count} transa{item.count !== 1 ? 'ções' : 'ção'}
                         </span>
                       </div>
                       <div className="text-left sm:text-right pl-5 sm:pl-0">
