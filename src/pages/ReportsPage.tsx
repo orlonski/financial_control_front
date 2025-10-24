@@ -1,12 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
 import { BarChart3, PieChart, TrendingUp, Calendar } from 'lucide-react'
-import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
-import type { CategoryReport, CashFlowData } from '@/types'
+import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 export default function ReportsPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -15,7 +14,6 @@ export default function ReportsPage() {
 
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
-  const currentMonth = currentDate.getMonth() + 1
 
   const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
   const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
@@ -159,7 +157,7 @@ export default function ReportsPage() {
               {categoryReport.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsPieChart>
-                    <RechartsPieChart
+                    <Pie
                       data={categoryReport.map((item, index) => ({
                         name: item.category.name,
                         value: item.total,
@@ -168,7 +166,7 @@ export default function ReportsPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
@@ -176,7 +174,7 @@ export default function ReportsPage() {
                       {categoryReport.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
-                    </RechartsPieChart>
+                    </Pie>
                     <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`} />
                   </RechartsPieChart>
                 </ResponsiveContainer>
