@@ -98,8 +98,10 @@ export const accountsApi = {
     return response.data
   },
 
-  getAllWithBalances: async (): Promise<AccountWithBalance[]> => {
-    const response = await api.get('/accounts/balances/all')
+  getAllWithBalances: async (endDate?: string, accountId?: string): Promise<AccountWithBalance[]> => {
+    const response = await api.get('/accounts/balances/all', {
+      params: { endDate, accountId }
+    })
     return response.data
   },
 }
@@ -198,9 +200,9 @@ export const transactionsApi = {
     await api.delete(`/transactions/${id}`)
   },
 
-  getSummary: async (startDate: string, endDate: string): Promise<TransactionSummary> => {
+  getSummary: async (startDate: string, endDate: string, accountId?: string): Promise<TransactionSummary> => {
     const response = await api.get('/transactions/summary/period', {
-      params: { startDate, endDate }
+      params: { startDate, endDate, accountId }
     })
     return response.data
   },

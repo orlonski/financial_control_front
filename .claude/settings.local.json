@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/backend/src/services/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
