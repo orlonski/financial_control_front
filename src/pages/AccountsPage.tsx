@@ -40,7 +40,7 @@ export default function AccountsPage() {
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['accounts-with-balances'],
-    queryFn: accountsApi.getAllWithBalances,
+    queryFn: () => accountsApi.getAllWithBalances(),
   })
 
   const createMutation = useMutation({
