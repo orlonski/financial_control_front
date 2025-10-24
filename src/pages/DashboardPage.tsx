@@ -74,6 +74,8 @@ export default function DashboardPage() {
   const totalExpense = summary?.totalExpense || 0
   const monthlyResult = totalIncome - totalExpense
 
+  const isLoading = !summary || initialAccounts.length === 0 || finalAccounts.length === 0
+
   return (
     <div className="space-y-6">
       <div>
@@ -125,24 +127,40 @@ export default function DashboardPage() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Saldo Inicial</CardTitle>
-            <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base sm:text-2xl font-bold">
-              {initialBalance.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Fim do mês anterior
-            </p>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
+                <div className="h-4 w-4 bg-gray-200 rounded"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-16"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Saldo Inicial</CardTitle>
+              <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-base sm:text-2xl font-bold">
+                {initialBalance.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fim do mês anterior
+              </p>
+            </CardContent>
+          </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -215,10 +233,11 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
 
       {/* Accounts */}
-      {!selectedAccountId && (
+      {!isLoading && !selectedAccountId && (
         <div>
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Suas Contas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
