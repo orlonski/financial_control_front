@@ -55,6 +55,11 @@ export default function EditTransactionPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts-initial-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts-final-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['category-report'] })
+      queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
       navigate('/transactions')
     },
   })

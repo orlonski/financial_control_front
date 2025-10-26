@@ -8,8 +8,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
-import { Plus, Edit, Trash2, CreditCard, Calendar } from 'lucide-react'
+import { Plus, Edit, Trash2, CreditCard, Calendar, TrendingUp, Award } from 'lucide-react'
 import type { CreditCard as CreditCardType, Account } from '@/types'
+
+/**
+ * Calculate how many days until the payment date for a purchase made today
+ * @param closingDay - Day of month when the invoice closes
+ * @param dueDay - Day of month when the invoice is due
+ * @returns Number of days until payment
+ */
+function calculateDaysUntilPayment(closingDay: number, dueDay: number): number {
+  const today = new Date()
+  const currentDay = today.getDate()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
+
+  let invoiceMonth = currentMonth
+  let invoiceYear = currentYear
+
+  // If purchase is after closing day, it goes to next month's invoice
+  if (currentDay > closingDay) {
+    invoiceMonth += 1
+    if (invoiceMonth > 11) {
+      invoiceMonth = 0
+      invoiceYear += 1
+    }
+  }
+
+  // Create the due date in the invoice month
+  let dueDate = new Date(invoiceYear, invoiceMonth, dueDay)
+
+  // If the due date is in the past (already passed this month), move to next month
+  if (dueDate.getTime() < today.getTime()) {
+    invoiceMonth += 1
+    if (invoiceMonth > 11) {
+      invoiceMonth = 0
+      invoiceYear += 1
+    }
+    dueDate = new Date(invoiceYear, invoiceMonth, dueDay)
+  }
+
+  // Calculate difference in days
+  const diffTime = dueDate.getTime() - today.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  return diffDays
+}
 
 const creditCardSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -110,6 +154,18 @@ export default function CreditCardsPage() {
 
   const isLoading = cardsLoading || accountsLoading
 
+  // Calculate days until payment for each card and find the best one
+  const cardsWithDays = creditCards.map(card => ({
+    ...card,
+    daysUntilPayment: calculateDaysUntilPayment(card.closingDay, card.dueDay)
+  }))
+
+  const bestCard = cardsWithDays.length > 0
+    ? cardsWithDays.reduce((best, current) =>
+        current.daysUntilPayment > best.daysUntilPayment ? current : best
+      )
+    : null
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -178,8 +234,47 @@ export default function CreditCardsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {creditCards.map((card) => (
+        <>
+          {/* Best Card Recommendation */}
+          {bestCard && (
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <Award className="h-6 w-6 text-green-600" />
+                  <CardTitle className="text-green-900">Melhor Cartão para Usar Hoje</CardTitle>
+                </div>
+                <CardDescription className="text-green-700">
+                  Maximize seu prazo de pagamento usando este cartão
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CreditCard className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-lg text-green-900">{bestCard.name}</span>
+                    </div>
+                    <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                      {bestCard.daysUntilPayment} dias
+                    </div>
+                  </div>
+                  <div className="text-sm text-green-800">
+                    <p>
+                      <strong>Se você usar este cartão hoje:</strong> A fatura vencerá em {bestCard.daysUntilPayment} dias,
+                      dando a você o maior prazo possível para pagar!
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-green-700">
+                    <Calendar className="h-3 w-3" />
+                    <span>Fecha dia {bestCard.closingDay} • Vence dia {bestCard.dueDay}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {cardsWithDays.map((card) => (
             <Card key={card.id} className="relative">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -209,13 +304,38 @@ export default function CreditCardsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Days Until Payment Indicator */}
+                <div className={`flex items-center justify-between p-3 rounded-lg ${
+                  card.id === bestCard?.id
+                    ? 'bg-green-100 border border-green-300'
+                    : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className={`h-4 w-4 ${
+                      card.id === bestCard?.id ? 'text-green-600' : 'text-blue-600'
+                    }`} />
+                    <span className={`text-sm font-medium ${
+                      card.id === bestCard?.id ? 'text-green-900' : 'text-blue-900'
+                    }`}>
+                      Compra hoje vence em:
+                    </span>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    card.id === bestCard?.id
+                      ? 'bg-green-600 text-white'
+                      : 'bg-blue-600 text-white'
+                  }`}>
+                    {card.daysUntilPayment} dias
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2 text-sm">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-gray-600">
                     Fecha dia {card.closingDay} • Vence dia {card.dueDay}
                   </span>
                 </div>
-                
+
                 {card.limit && (
                   <div className="text-sm">
                     <span className="text-gray-600">Limite: </span>
@@ -237,7 +357,8 @@ export default function CreditCardsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Create Dialog */}

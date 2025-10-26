@@ -4,7 +4,7 @@ import { reportsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
-import { BarChart3, PieChart, TrendingUp, Calendar } from 'lucide-react'
+import { BarChart3, PieChart, TrendingUp, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 export default function ReportsPage() {
@@ -14,6 +14,7 @@ export default function ReportsPage() {
 
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
+  const currentMonth = currentDate.getMonth() + 1
 
   const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
   const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
@@ -49,6 +50,29 @@ export default function ReportsPage() {
   const COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
 
   const isLoading = categoryLoading || cashFlowLoading
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (selectedMonth === 1) {
+        setSelectedMonth(12)
+        setSelectedYear(selectedYear - 1)
+      } else {
+        setSelectedMonth(selectedMonth - 1)
+      }
+    } else {
+      if (selectedMonth === 12) {
+        setSelectedMonth(1)
+        setSelectedYear(selectedYear + 1)
+      } else {
+        setSelectedMonth(selectedMonth + 1)
+      }
+    }
+  }
+
+  const goToCurrentMonth = () => {
+    setSelectedYear(currentYear)
+    setSelectedMonth(currentMonth)
+  }
 
   if (isLoading) {
     return (
@@ -86,9 +110,9 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
           <p className="text-gray-600">Analise seus gastos e receitas</p>
         </div>
-        <Button onClick={() => window.location.href = '/statement'} variant="outline">
+        <Button onClick={goToCurrentMonth} variant="outline">
           <Calendar className="h-4 w-4 mr-2" />
-          Ver Extrato
+          Mês Atual
         </Button>
       </div>
 
@@ -96,6 +120,30 @@ export default function ReportsPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateMonth('prev')}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              <div className="text-center">
+                <div className="text-sm sm:text-base font-medium text-gray-900">
+                  {months[selectedMonth - 1].label} de {selectedYear}
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateMonth('next')}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant={reportType === 'category' ? 'default' : 'outline'}

@@ -18,7 +18,7 @@ const installmentSchema = z.object({
   notes: z.string().optional(),
   accountId: z.string().min(1, 'Conta é obrigatória'),
   categoryId: z.string().min(1, 'Categoria é obrigatória'),
-  creditCardId: z.string().min(1, 'Cartão é obrigatório para parcelamento'),
+  creditCardId: z.string().optional(),
   totalInstallments: z.number().min(2).max(60, 'Parcelas devem ser entre 2 e 60'),
 })
 
@@ -48,6 +48,11 @@ export default function NewInstallmentPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts-initial-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts-final-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['category-report'] })
+      queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
       navigate('/transactions')
     },
   })
@@ -74,10 +79,16 @@ export default function NewInstallmentPage() {
   const filteredCategories = categories.filter(cat => cat.type === selectedType)
 
   const onSubmit = (data: InstallmentForm) => {
-    createInstallmentMutation.mutate(data)
+    // Remove creditCardId if empty string
+    const payload = {
+      ...data,
+      creditCardId: data.creditCardId || undefined
+    }
+    createInstallmentMutation.mutate(payload)
   }
 
-  const installmentValue = amount && totalInstallments ? amount / totalInstallments : 0
+  // Calculate total (amount is per installment, so multiply)
+  const totalAmount = amount && totalInstallments ? amount * totalInstallments : 0
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -90,14 +101,14 @@ export default function NewInstallmentPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nova Compra Parcelada</h1>
-          <p className="text-gray-600">Registre uma compra em parcelas</p>
+          <h1 className="text-2xl font-bold text-gray-900">Nova Transação Recorrente</h1>
+          <p className="text-gray-600">Registre uma transação recorrente ou compra parcelada</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Informações da Compra</CardTitle>
+          <CardTitle>Informações da Transação</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -119,7 +130,7 @@ export default function NewInstallmentPage() {
             </div>
 
             <Input
-              label="Valor total"
+              label="Valor de cada parcela/repetição"
               type="number"
               step="0.01"
               placeholder="0,00"
@@ -128,7 +139,7 @@ export default function NewInstallmentPage() {
             />
 
             <Input
-              label="Número de parcelas"
+              label="Número de parcelas/repetições"
               type="number"
               min="2"
               max="60"
@@ -137,19 +148,22 @@ export default function NewInstallmentPage() {
               error={errors.totalInstallments?.message}
             />
 
-            {installmentValue > 0 && (
+            {totalAmount > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                 <p className="text-sm text-blue-800">
-                  <strong>Valor de cada parcela:</strong> {installmentValue.toLocaleString('pt-BR', {
+                  <strong>Valor total:</strong> {totalAmount.toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
-                  })}
+                  })} ({totalInstallments}x {amount.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })})
                 </p>
               </div>
             )}
 
             <Input
-              label="Data da compra"
+              label="Data inicial"
               type="date"
               {...register('date')}
               error={errors.date?.message}
@@ -183,11 +197,14 @@ export default function NewInstallmentPage() {
             />
 
             <Select
-              label="Cartão de Crédito"
-              options={creditCards.map(card => ({
-                value: card.id,
-                label: card.name
-              }))}
+              label="Cartão de Crédito (opcional)"
+              options={[
+                { value: '', label: 'Nenhum (transação recorrente)' },
+                ...creditCards.map(card => ({
+                  value: card.id,
+                  label: card.name
+                }))
+              ]}
               {...register('creditCardId')}
               error={errors.creditCardId?.message}
             />
@@ -202,9 +219,15 @@ export default function NewInstallmentPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <div className="flex items-start space-x-2">
                 <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-blue-800">
-                  <strong>Parcelamento:</strong> Cada parcela aparecerá na fatura correta do cartão baseada na data de vencimento.
-                </p>
+                <div className="text-sm text-blue-800">
+                  <p className="mb-2">
+                    <strong>Como funciona:</strong>
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><strong>Com cartão:</strong> Cada parcela aparecerá na fatura correta baseada na data de vencimento</li>
+                    <li><strong>Sem cartão:</strong> Cria transações recorrentes (ex: salário mensal, aluguel, etc)</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
@@ -219,10 +242,10 @@ export default function NewInstallmentPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={createInstallmentMutation.isPending || creditCards.length === 0}
+                disabled={createInstallmentMutation.isPending}
                 className="flex-1"
               >
-                {createInstallmentMutation.isPending ? 'Criando...' : 'Criar Parcelamento'}
+                {createInstallmentMutation.isPending ? 'Criando...' : 'Criar Transação Recorrente'}
               </Button>
             </div>
           </form>

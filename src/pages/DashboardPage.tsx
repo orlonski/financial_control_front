@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { accountsApi, transactionsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select } from '@/components/ui/input'
-import { Wallet, TrendingUp, TrendingDown, DollarSign, Plus, ArrowLeftRight, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Wallet, TrendingUp, TrendingDown, DollarSign, Plus, ArrowLeftRight, FileText, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -44,6 +45,7 @@ export default function DashboardPage() {
 
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
+  const currentMonth = currentDate.getMonth() + 1
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
   const months = [
@@ -76,18 +78,70 @@ export default function DashboardPage() {
 
   const isLoading = !summary || initialAccounts.length === 0 || finalAccounts.length === 0
 
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (selectedMonth === 1) {
+        setSelectedMonth(12)
+        setSelectedYear(selectedYear - 1)
+      } else {
+        setSelectedMonth(selectedMonth - 1)
+      }
+    } else {
+      if (selectedMonth === 12) {
+        setSelectedMonth(1)
+        setSelectedYear(selectedYear + 1)
+      } else {
+        setSelectedMonth(selectedMonth + 1)
+      }
+    }
+  }
+
+  const goToCurrentMonth = () => {
+    setSelectedYear(currentYear)
+    setSelectedMonth(currentMonth)
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">
-          Visão geral das suas finanças
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">
+            Visão geral das suas finanças
+          </p>
+        </div>
+        <Button onClick={goToCurrentMonth} variant="outline">
+          <Calendar className="h-4 w-4 mr-2" />
+          Mês Atual
+        </Button>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigateMonth('prev')}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <div className="text-center">
+              <div className="text-sm sm:text-base font-medium text-gray-900">
+                {months[selectedMonth - 1].label} de {selectedYear}
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigateMonth('next')}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
         <CardContent>

@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { transactionsApi, creditCardsApi } from '@/services/api'
+import { transactionsApi, accountsApi, categoriesApi, creditCardsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/input'
 import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -12,9 +14,57 @@ export default function TransactionsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
+  // Filter states
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number | ''>('')
+  const [selectedType, setSelectedType] = useState<'INCOME' | 'EXPENSE' | ''>('')
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
+  const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>('')
+
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
+  const months = [
+    { value: 1, label: 'Janeiro' },
+    { value: 2, label: 'Fevereiro' },
+    { value: 3, label: 'Março' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Maio' },
+    { value: 6, label: 'Junho' },
+    { value: 7, label: 'Julho' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Setembro' },
+    { value: 10, label: 'Outubro' },
+    { value: 11, label: 'Novembro' },
+    { value: 12, label: 'Dezembro' },
+  ]
+
+  // Build filter params
+  const filterParams: any = { limit: 100 }
+  if (selectedMonth !== '') {
+    const startDate = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split('T')[0]
+    const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
+    filterParams.startDate = startDate
+    filterParams.endDate = endDate
+  }
+  if (selectedType) filterParams.type = selectedType
+  if (selectedAccountId) filterParams.accountId = selectedAccountId
+  if (selectedCategoryId) filterParams.categoryId = selectedCategoryId
+  if (selectedCreditCardId) filterParams.creditCardId = selectedCreditCardId
+
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['transactions'],
-    queryFn: () => transactionsApi.getAll({ limit: 50 }),
+    queryKey: ['transactions', filterParams],
+    queryFn: () => transactionsApi.getAll(filterParams),
+  })
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: accountsApi.getAll,
+  })
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoriesApi.getAll,
   })
 
   const { data: creditCards = [] } = useQuery({
@@ -27,6 +77,11 @@ export default function TransactionsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts-initial-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts-final-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['category-report'] })
+      queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
     },
   })
 
@@ -71,6 +126,18 @@ export default function TransactionsPage() {
     )
   }
 
+  const filteredCategories = selectedType
+    ? categories.filter(cat => cat.type === selectedType)
+    : categories
+
+  const clearFilters = () => {
+    setSelectedMonth('')
+    setSelectedType('')
+    setSelectedAccountId('')
+    setSelectedCategoryId('')
+    setSelectedCreditCardId('')
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -83,12 +150,99 @@ export default function TransactionsPage() {
             <Plus className="h-4 w-4 mr-2" />
             Nova Transação
           </Button>
-          <Button onClick={handleCreateInstallment} disabled={creditCards.length === 0} variant="outline" className="flex-1 sm:flex-none">
+          <Button onClick={handleCreateInstallment} variant="outline" className="flex-1 sm:flex-none">
             <CreditCard className="h-4 w-4 mr-2" />
-            Parcelamento
+            Recorrente
           </Button>
         </div>
       </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Filtros</CardTitle>
+            <Button onClick={clearFilters} variant="ghost" size="sm">
+              Limpar
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <Select
+              label="Mês"
+              options={[
+                { value: '', label: 'Todos os meses' },
+                ...months.map(month => ({
+                  value: month.value.toString(),
+                  label: month.label
+                }))
+              ]}
+              value={selectedMonth.toString()}
+              onChange={(e) => setSelectedMonth(e.target.value === '' ? '' : parseInt(e.target.value))}
+            />
+            <Select
+              label="Ano"
+              options={years.map(year => ({
+                value: year.toString(),
+                label: year.toString()
+              }))}
+              value={selectedYear.toString()}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            />
+            <Select
+              label="Tipo"
+              options={[
+                { value: '', label: 'Todos' },
+                { value: 'INCOME', label: 'Receita' },
+                { value: 'EXPENSE', label: 'Despesa' }
+              ]}
+              value={selectedType}
+              onChange={(e) => {
+                setSelectedType(e.target.value as 'INCOME' | 'EXPENSE' | '')
+                setSelectedCategoryId('') // Reset category when type changes
+              }}
+            />
+            <Select
+              label="Conta"
+              options={[
+                { value: '', label: 'Todas as contas' },
+                ...accounts.map(account => ({
+                  value: account.id,
+                  label: account.name
+                }))
+              ]}
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+            />
+            <Select
+              label="Categoria"
+              options={[
+                { value: '', label: 'Todas as categorias' },
+                ...filteredCategories.map(category => ({
+                  value: category.id,
+                  label: category.name
+                }))
+              ]}
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              disabled={!selectedType}
+            />
+            <Select
+              label="Cartão de Crédito"
+              options={[
+                { value: '', label: 'Todos os cartões' },
+                ...creditCards.map(card => ({
+                  value: card.id,
+                  label: card.name
+                }))
+              ]}
+              value={selectedCreditCardId}
+              onChange={(e) => setSelectedCreditCardId(e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {transactions.length === 0 ? (
         <Card>
