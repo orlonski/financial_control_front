@@ -200,6 +200,11 @@ export const transactionsApi = {
     await api.delete(`/transactions/${id}`)
   },
 
+  updatePaidStatus: async (id: string, paid: boolean): Promise<Transaction> => {
+    const response = await api.patch(`/transactions/${id}/paid`, { paid })
+    return response.data
+  },
+
   getSummary: async (startDate: string, endDate: string, accountId?: string): Promise<TransactionSummary> => {
     const response = await api.get('/transactions/summary/period', {
       params: { startDate, endDate, accountId }

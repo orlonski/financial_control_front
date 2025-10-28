@@ -16,6 +16,12 @@ import type { CreditCard as CreditCardType, Account } from '@/types'
  * @param closingDay - Day of month when the invoice closes
  * @param dueDay - Day of month when the invoice is due
  * @returns Number of days until payment
+ *
+ * Logic:
+ * 1. If dueDay > closingDay: due date is in the SAME month as closing
+ *    Example: Closes 7th, Due 20th → Invoice closes 07/11, due 20/11
+ * 2. If dueDay <= closingDay: due date is in the NEXT month after closing
+ *    Example: Closes 26th, Due 3rd → Invoice closes 26/11, due 03/12
  */
 function calculateDaysUntilPayment(closingDay: number, dueDay: number): number {
   const today = new Date()
@@ -23,30 +29,35 @@ function calculateDaysUntilPayment(closingDay: number, dueDay: number): number {
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
 
-  let invoiceMonth = currentMonth
-  let invoiceYear = currentYear
+  // Determine which invoice this purchase belongs to
+  let invoiceClosingMonth = currentMonth
+  let invoiceClosingYear = currentYear
 
   // If purchase is after closing day, it goes to next month's invoice
   if (currentDay > closingDay) {
-    invoiceMonth += 1
-    if (invoiceMonth > 11) {
-      invoiceMonth = 0
-      invoiceYear += 1
+    invoiceClosingMonth += 1
+    if (invoiceClosingMonth > 11) {
+      invoiceClosingMonth = 0
+      invoiceClosingYear += 1
     }
   }
 
-  // Create the due date in the invoice month
-  let dueDate = new Date(invoiceYear, invoiceMonth, dueDay)
+  // Determine due month based on closing/due day relationship
+  let dueMonth = invoiceClosingMonth
+  let dueYear = invoiceClosingYear
 
-  // If the due date is in the past (already passed this month), move to next month
-  if (dueDate.getTime() < today.getTime()) {
-    invoiceMonth += 1
-    if (invoiceMonth > 11) {
-      invoiceMonth = 0
-      invoiceYear += 1
+  // If due day is BEFORE or EQUAL to closing day, due date is NEXT month
+  if (dueDay <= closingDay) {
+    dueMonth += 1
+    if (dueMonth > 11) {
+      dueMonth = 0
+      dueYear += 1
     }
-    dueDate = new Date(invoiceYear, invoiceMonth, dueDay)
   }
+  // Otherwise, due date is in SAME month as closing
+
+  // Create the due date
+  const dueDate = new Date(dueYear, dueMonth, dueDay)
 
   // Calculate difference in days
   const diffTime = dueDate.getTime() - today.getTime()
@@ -337,14 +348,46 @@ export default function CreditCardsPage() {
                 </div>
 
                 {card.limit && (
-                  <div className="text-sm">
-                    <span className="text-gray-600">Limite: </span>
-                    <span className="font-medium">
-                      {card.limit.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Utilizado:</span>
+                      <span className={`font-medium ${
+                        ((card.usedAmount || 0) / card.limit) > 0.8 ? 'text-red-600' :
+                        ((card.usedAmount || 0) / card.limit) > 0.5 ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {(card.usedAmount || 0).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${
+                          ((card.usedAmount || 0) / card.limit) > 0.8 ? 'bg-red-500' :
+                          ((card.usedAmount || 0) / card.limit) > 0.5 ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}
+                        style={{
+                          width: `${Math.min(((card.usedAmount || 0) / card.limit) * 100, 100)}%`
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>
+                        Disponível: {(card.limit - (card.usedAmount || 0)).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </span>
+                      <span>
+                        Limite: {card.limit.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </span>
+                    </div>
                   </div>
                 )}
 

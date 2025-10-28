@@ -46,6 +46,7 @@ export interface CreditCard {
   closingDay: number
   dueDay: number
   limit?: number
+  usedAmount?: number
   accountId: string
   userId: string
   createdAt: string
@@ -66,6 +67,7 @@ export interface Transaction {
   purchaseDate?: string
   description: string
   notes?: string
+  paid?: boolean
   accountId: string
   categoryId: string
   creditCardId?: string
