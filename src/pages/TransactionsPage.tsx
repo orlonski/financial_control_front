@@ -5,7 +5,7 @@ import { transactionsApi, accountsApi, categoriesApi, creditCardsApi } from '@/s
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
-import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar } from 'lucide-react'
+import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar, CheckCircle2, Circle } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Transaction } from '@/types'
@@ -21,6 +21,7 @@ export default function TransactionsPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>('')
+  const [togglingTransactionId, setTogglingTransactionId] = useState<string | null>(null)
 
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
@@ -82,7 +83,22 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] })
       queryClient.invalidateQueries({ queryKey: ['category-report'] })
       queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
+      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
     },
+  })
+
+  const togglePaidMutation = useMutation({
+    mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
+      transactionsApi.updatePaidStatus(id, paid),
+    onSuccess: () => {
+      setTogglingTransactionId(null)
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+    },
+    onError: (error) => {
+      setTogglingTransactionId(null)
+      alert('Erro ao atualizar status da transação: ' + error)
+    }
   })
 
   const handleEdit = (transaction: Transaction) => {
@@ -93,6 +109,14 @@ export default function TransactionsPage() {
     if (confirm('Tem certeza que deseja excluir esta transação?')) {
       deleteMutation.mutate(id)
     }
+  }
+
+  const handleTogglePaid = (transaction: Transaction) => {
+    setTogglingTransactionId(transaction.id)
+    togglePaidMutation.mutate({
+      id: transaction.id,
+      paid: !transaction.paid
+    })
   }
 
   const handleCreate = () => {
@@ -263,7 +287,9 @@ export default function TransactionsPage() {
       ) : (
         <div className="space-y-4">
           {transactions.map((transaction) => (
-            <Card key={transaction.id} className="relative">
+            <Card key={transaction.id} className={`relative ${
+              transaction.paid ? 'opacity-60' : ''
+            }`}>
               <CardHeader className="pb-3">
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -290,6 +316,22 @@ export default function TransactionsPage() {
                       </div>
                     </div>
                     <div className="flex items-start space-x-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleTogglePaid(transaction)}
+                        disabled={togglingTransactionId === transaction.id}
+                        title={transaction.paid ? 'Marcar como não pago' : 'Marcar como pago'}
+                      >
+                        {togglingTransactionId === transaction.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+                        ) : transaction.paid ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-gray-400" />
+                        )}
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
