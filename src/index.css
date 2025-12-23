@@ -5,8 +5,48 @@
 @layer base {
   * {
     @apply border-gray-200;
+    /* Remove highlight azul no toque (iOS/Android) */
+    -webkit-tap-highlight-color: transparent;
   }
+
   body {
     @apply bg-white text-gray-900;
+    /* Previne scroll bounce no iOS */
+    overscroll-behavior: none;
+    /* Suporte para safe areas do iPhone (notch) */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Previne zoom em inputs no iOS (mínimo 16px) */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Scroll suave nativo no iOS */
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer utilities {
+  /* Classes utilitárias para safe areas do iPhone */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
   }
 }

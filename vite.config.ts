@@ -15,6 +15,16 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          forms: ['react-hook-form', 'zod', '@hookform/resolvers'],
+          query: ['@tanstack/react-query'],
+        }
+      }
+    }
   },
   server: {
     port: 5173,
