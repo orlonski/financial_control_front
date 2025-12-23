@@ -7,7 +7,7 @@ import { Select } from '@/components/ui/input'
 import { ChevronLeft, ChevronRight, Calendar, TrendingUp, TrendingDown, CreditCard, Wallet } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, toNumber } from '@/lib/utils'
 import type { Transaction } from '@/types'
 
 // Tipo para agrupamento de transações
@@ -43,7 +43,8 @@ function groupTransactionsByAccount(transactions: Transaction[]): GroupedTransac
     }
 
     const group = accountMap.get(accountId)!
-    const amount = transaction.type === 'INCOME' ? transaction.amount : -transaction.amount
+    const numericAmount = toNumber(transaction.amount)
+    const amount = transaction.type === 'INCOME' ? numericAmount : -numericAmount
     group.total += amount
 
     if (transaction.creditCardId && transaction.creditCard) {
