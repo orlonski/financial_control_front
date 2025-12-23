@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { Plus, Edit, Trash2, CreditCard, Calendar, TrendingUp, Award } from 'lucide-react'
-import type { CreditCard as CreditCardType, Account } from '@/types'
+import { formatCurrency } from '@/lib/utils'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
+import type { CreditCard as CreditCardType } from '@/types'
 
 /**
  * Calculate how many days until the payment date for a purchase made today
@@ -81,6 +84,8 @@ export default function CreditCardsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<CreditCardType | null>(null)
   const queryClient = useQueryClient()
+  const { success, error: showError } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const { data: creditCards = [], isLoading: cardsLoading } = useQuery({
     queryKey: ['credit-cards'],
@@ -98,6 +103,10 @@ export default function CreditCardsPage() {
       queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
       setIsCreateOpen(false)
       reset()
+      success('Cartão criado com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao criar cartão')
     },
   })
 
@@ -109,6 +118,10 @@ export default function CreditCardsPage() {
       setIsEditOpen(false)
       setEditingCard(null)
       reset()
+      success('Cartão atualizado com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao atualizar cartão')
     },
   })
 
@@ -116,6 +129,10 @@ export default function CreditCardsPage() {
     mutationFn: creditCardsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      success('Cartão excluído com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao excluir cartão. Verifique se não há transações vinculadas.')
     },
   })
 
@@ -124,7 +141,6 @@ export default function CreditCardsPage() {
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<CreditCardForm>({
     resolver: zodResolver(creditCardSchema),
@@ -152,8 +168,15 @@ export default function CreditCardsPage() {
     setIsEditOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cartão?')) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Cartão',
+      description: 'Tem certeza que deseja excluir este cartão? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(id)
     }
   }
@@ -202,6 +225,8 @@ export default function CreditCardsPage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Cartões de Crédito</h1>
@@ -298,6 +323,7 @@ export default function CreditCardsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEdit(card)}
+                      aria-label="Editar cartão"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -305,6 +331,7 @@ export default function CreditCardsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(card.id)}
+                      aria-label="Excluir cartão"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -347,7 +374,7 @@ export default function CreditCardsPage() {
                   </span>
                 </div>
 
-                {card.limit && (
+                {card.limit && card.limit > 0 && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Utilizado:</span>
@@ -356,10 +383,7 @@ export default function CreditCardsPage() {
                         ((card.usedAmount || 0) / card.limit) > 0.5 ? 'text-yellow-600' :
                         'text-green-600'
                       }`}>
-                        {(card.usedAmount || 0).toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        {formatCurrency(card.usedAmount || 0)}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -376,16 +400,10 @@ export default function CreditCardsPage() {
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>
-                        Disponível: {(card.limit - (card.usedAmount || 0)).toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        Disponível: {formatCurrency(card.limit - (card.usedAmount || 0))}
                       </span>
                       <span>
-                        Limite: {card.limit.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        Limite: {formatCurrency(card.limit)}
                       </span>
                     </div>
                   </div>
@@ -393,7 +411,7 @@ export default function CreditCardsPage() {
 
                 <div className="pt-2 border-t">
                   <p className="text-xs text-gray-500">
-                    💡 Compras feitas até dia {card.closingDay} aparecem na fatura que vence dia {card.dueDay} do mesmo mês.
+                    Compras feitas até dia {card.closingDay} aparecem na fatura que vence dia {card.dueDay} do mesmo mês.
                     Compras após dia {card.closingDay} aparecem na fatura do mês seguinte.
                   </p>
                 </div>
@@ -462,7 +480,7 @@ export default function CreditCardsPage() {
 
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <p className="text-sm text-blue-800">
-                <strong>Como funciona:</strong> Compras feitas até o dia de fechamento aparecem na fatura que vence no dia de vencimento do mesmo mês. 
+                <strong>Como funciona:</strong> Compras feitas até o dia de fechamento aparecem na fatura que vence no dia de vencimento do mesmo mês.
                 Compras após o fechamento aparecem na fatura do mês seguinte.
               </p>
             </div>
@@ -546,7 +564,7 @@ export default function CreditCardsPage() {
 
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <p className="text-sm text-blue-800">
-                <strong>Como funciona:</strong> Compras feitas até o dia de fechamento aparecem na fatura que vence no dia de vencimento do mesmo mês. 
+                <strong>Como funciona:</strong> Compras feitas até o dia de fechamento aparecem na fatura que vence no dia de vencimento do mesmo mês.
                 Compras após o fechamento aparecem na fatura do mês seguinte.
               </p>
             </div>

@@ -4,14 +4,78 @@ import { reportsApi, accountsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
-import { ChevronLeft, ChevronRight, Calendar, TrendingUp, TrendingDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar, TrendingUp, TrendingDown, CreditCard, Wallet } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { formatCurrency } from '@/lib/utils'
+import type { Transaction } from '@/types'
+
+// Tipo para agrupamento de transações
+interface GroupedTransactions {
+  accountId: string
+  accountName: string
+  directTransactions: Transaction[]
+  creditCards: {
+    cardId: string
+    cardName: string
+    transactions: Transaction[]
+    total: number
+  }[]
+  total: number
+}
+
+// Função para agrupar transações por conta e cartão
+function groupTransactionsByAccount(transactions: Transaction[]): GroupedTransactions[] {
+  const accountMap = new Map<string, GroupedTransactions>()
+
+  for (const transaction of transactions) {
+    const accountId = transaction.accountId
+    const accountName = transaction.account.name
+
+    if (!accountMap.has(accountId)) {
+      accountMap.set(accountId, {
+        accountId,
+        accountName,
+        directTransactions: [],
+        creditCards: [],
+        total: 0,
+      })
+    }
+
+    const group = accountMap.get(accountId)!
+    const amount = transaction.type === 'INCOME' ? transaction.amount : -transaction.amount
+    group.total += amount
+
+    if (transaction.creditCardId && transaction.creditCard) {
+      let cardGroup = group.creditCards.find(c => c.cardId === transaction.creditCardId)
+      if (!cardGroup) {
+        cardGroup = {
+          cardId: transaction.creditCardId,
+          cardName: transaction.creditCard.name,
+          transactions: [],
+          total: 0,
+        }
+        group.creditCards.push(cardGroup)
+      }
+      cardGroup.transactions.push(transaction)
+      cardGroup.total += amount
+    } else {
+      group.directTransactions.push(transaction)
+    }
+  }
+
+  return Array.from(accountMap.values())
+}
 
 export default function StatementPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const { data: statement, isLoading } = useQuery({
     queryKey: ['monthly-statement', selectedYear, selectedMonth, selectedAccountId],
@@ -177,10 +241,7 @@ export default function StatementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statement.dailyBalances[0]?.totalBalance.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  }) || 'R$ 0,00'}
+                  {formatCurrency(statement.dailyBalances[0]?.totalBalance)}
                 </div>
               </CardContent>
             </Card>
@@ -192,10 +253,7 @@ export default function StatementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  }) || 'R$ 0,00'}
+                  {formatCurrency(statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance)}
                 </div>
               </CardContent>
             </Card>
@@ -207,16 +265,13 @@ export default function StatementPage() {
               </CardHeader>
               <CardContent>
                 <div className={`text-2xl font-bold ${
-                  (statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance || 0) >= 
-                  (statement.dailyBalances[0]?.totalBalance || 0) 
-                    ? 'text-green-600' 
+                  (statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance || 0) >=
+                  (statement.dailyBalances[0]?.totalBalance || 0)
+                    ? 'text-green-600'
                     : 'text-red-600'
                 }`}>
-                  {((statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance || 0) - 
-                    (statement.dailyBalances[0]?.totalBalance || 0)).toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
+                  {formatCurrency((statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance || 0) -
+                    (statement.dailyBalances[0]?.totalBalance || 0))}
                 </div>
               </CardContent>
             </Card>
@@ -224,7 +279,10 @@ export default function StatementPage() {
 
           {/* Daily Balances */}
           <div className="space-y-4">
-            {statement.dailyBalances.map((dayBalance) => (
+            {statement.dailyBalances.map((dayBalance) => {
+              const groupedTransactions = groupTransactionsByAccount(dayBalance.transactions)
+
+              return (
               <Card key={dayBalance.date}>
                 <CardHeader className="pb-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -240,52 +298,130 @@ export default function StatementPage() {
                       <div className={`text-base sm:text-lg font-bold ${
                         dayBalance.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {dayBalance.totalBalance.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        {formatCurrency(dayBalance.totalBalance)}
                       </div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Transactions */}
-                  {dayBalance.transactions.length > 0 && (
+                  {/* Transactions grouped by account */}
+                  {groupedTransactions.length > 0 && (
                     <div>
                       <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-2">Transações</h4>
                       <div className="space-y-2">
-                        {dayBalance.transactions.map((transaction) => (
-                          <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-gray-50 rounded">
-                            <div className="flex items-start space-x-2 min-w-0 flex-1">
-                              <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
-                                transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
-                              }`} />
-                              <div className="min-w-0 flex-1">
-                                <div className="text-sm font-medium break-words">{transaction.description}</div>
-                                <div className="flex flex-wrap items-center gap-1 mt-1">
-                                  <span className="text-xs text-gray-500">{transaction.category.name}</span>
-                                  {transaction.creditCard && (
-                                    <>
-                                      <span className="text-xs text-gray-400">•</span>
-                                      <span className="text-xs text-blue-600 flex items-center">
-                                        💳 {transaction.creditCard.name}
-                                      </span>
-                                    </>
-                                  )}
+                        {groupedTransactions.map((accountGroup) => {
+                          const accountKey = `${dayBalance.date}-${accountGroup.accountId}`
+                          const isAccountExpanded = expandedGroups[accountKey] || false
+
+                          return (
+                            <div key={accountGroup.accountId} className="border rounded-lg overflow-hidden">
+                              {/* Account Header - Clickable */}
+                              <button
+                                onClick={() => toggleGroup(accountKey)}
+                                className="w-full flex items-center justify-between p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <ChevronRight
+                                    className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
+                                      isAccountExpanded ? 'rotate-90' : ''
+                                    }`}
+                                  />
+                                  <Wallet className="h-4 w-4 text-gray-600" />
+                                  <span className="font-medium text-sm">{accountGroup.accountName}</span>
+                                </div>
+                                <span className={`font-medium text-sm ${
+                                  accountGroup.total >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {formatCurrency(accountGroup.total)}
+                                </span>
+                              </button>
+
+                              {/* Account Content - Expandable */}
+                              <div className={`transition-all duration-200 overflow-hidden ${
+                                isAccountExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                              }`}>
+                                <div className="p-3 space-y-2">
+                                  {/* Direct transactions (not from credit card) */}
+                                  {accountGroup.directTransactions.map((transaction) => (
+                                    <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 bg-gray-50 rounded">
+                                      <div className="flex items-start space-x-2 min-w-0 flex-1">
+                                        <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                                          transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
+                                        }`} />
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-sm font-medium break-words">{transaction.description}</div>
+                                          <span className="text-xs text-gray-500">{transaction.category.name}</span>
+                                        </div>
+                                      </div>
+                                      <div className={`text-sm font-medium flex-shrink-0 ${
+                                        transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                                      </div>
+                                    </div>
+                                  ))}
+
+                                  {/* Credit card groups */}
+                                  {accountGroup.creditCards.map((cardGroup) => {
+                                    const cardKey = `${dayBalance.date}-${accountGroup.accountId}-${cardGroup.cardId}`
+                                    const isCardExpanded = expandedGroups[cardKey] || false
+
+                                    return (
+                                      <div key={cardGroup.cardId} className="border rounded-lg overflow-hidden ml-4">
+                                        {/* Card Header - Clickable */}
+                                        <button
+                                          onClick={() => toggleGroup(cardKey)}
+                                          className="w-full flex items-center justify-between p-2 bg-blue-50 hover:bg-blue-100 transition-colors"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <ChevronRight
+                                              className={`h-3 w-3 text-blue-500 transition-transform duration-200 ${
+                                                isCardExpanded ? 'rotate-90' : ''
+                                              }`}
+                                            />
+                                            <CreditCard className="h-3 w-3 text-blue-600" />
+                                            <span className="font-medium text-xs text-blue-700">{cardGroup.cardName}</span>
+                                          </div>
+                                          <span className={`font-medium text-xs ${
+                                            cardGroup.total >= 0 ? 'text-green-600' : 'text-red-600'
+                                          }`}>
+                                            {formatCurrency(cardGroup.total)}
+                                          </span>
+                                        </button>
+
+                                        {/* Card Content - Expandable */}
+                                        <div className={`transition-all duration-200 overflow-hidden ${
+                                          isCardExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                                        }`}>
+                                          <div className="p-2 space-y-1">
+                                            {cardGroup.transactions.map((transaction) => (
+                                              <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 p-2 bg-white rounded border">
+                                                <div className="flex items-start space-x-2 min-w-0 flex-1">
+                                                  <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                                                    transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
+                                                  }`} />
+                                                  <div className="min-w-0 flex-1">
+                                                    <div className="text-xs font-medium break-words">{transaction.description}</div>
+                                                    <span className="text-xs text-gray-500">{transaction.category.name}</span>
+                                                  </div>
+                                                </div>
+                                                <div className={`text-xs font-medium flex-shrink-0 ${
+                                                  transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                                                }`}>
+                                                  {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
                                 </div>
                               </div>
                             </div>
-                            <div className={`text-sm sm:text-base font-medium flex-shrink-0 ${
-                              transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {transaction.type === 'INCOME' ? '+' : '-'}
-                              {transaction.amount.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })}
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )}
@@ -311,10 +447,7 @@ export default function StatementPage() {
                               </div>
                             </div>
                             <div className="text-sm sm:text-base font-medium text-gray-900 flex-shrink-0">
-                              {transfer.amount.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })}
+                              {formatCurrency(transfer.amount)}
                             </div>
                           </div>
                         ))}
@@ -332,10 +465,7 @@ export default function StatementPage() {
                           <div className={`text-xs sm:text-sm font-medium ${
                             (dayBalance.balances[account.id] || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
-                            {(dayBalance.balances[account.id] || 0).toLocaleString('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            })}
+                            {formatCurrency(dayBalance.balances[account.id] || 0)}
                           </div>
                         </div>
                       ))}
@@ -343,7 +473,8 @@ export default function StatementPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              )
+            })}
           </div>
         </>
       )}

@@ -6,12 +6,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Wallet, TrendingUp, TrendingDown, DollarSign, Plus, ArrowLeftRight, FileText, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import { MONTHS, getYearsRange } from '@/constants/dateOptions'
+import { useMonthNavigation } from '@/hooks/useMonthNavigation'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const {
+    selectedYear,
+    selectedMonth,
+    setSelectedYear,
+    setSelectedMonth,
+    navigateMonth,
+    goToCurrentMonth,
+  } = useMonthNavigation()
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+
+  const years = getYearsRange(5)
 
   // Calculate dates for historical balances
   const endOfMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
@@ -43,26 +54,6 @@ export default function DashboardPage() {
     },
   })
 
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const currentMonth = currentDate.getMonth() + 1
-
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-  const months = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' },
-  ]
-
   // Calculate balances
   const initialBalance = selectedAccountId
     ? (initialAccounts.find(a => a.id === selectedAccountId)?.balance || 0)
@@ -77,29 +68,6 @@ export default function DashboardPage() {
   const monthlyResult = totalIncome - totalExpense
 
   const isLoading = !summary || initialAccounts.length === 0 || finalAccounts.length === 0
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      if (selectedMonth === 1) {
-        setSelectedMonth(12)
-        setSelectedYear(selectedYear - 1)
-      } else {
-        setSelectedMonth(selectedMonth - 1)
-      }
-    } else {
-      if (selectedMonth === 12) {
-        setSelectedMonth(1)
-        setSelectedYear(selectedYear + 1)
-      } else {
-        setSelectedMonth(selectedMonth + 1)
-      }
-    }
-  }
-
-  const goToCurrentMonth = () => {
-    setSelectedYear(currentYear)
-    setSelectedMonth(currentMonth)
-  }
 
   return (
     <div className="space-y-6">
@@ -124,13 +92,14 @@ export default function DashboardPage() {
               variant="outline"
               size="icon"
               onClick={() => navigateMonth('prev')}
+              aria-label="Mês anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
             <div className="text-center">
               <div className="text-sm sm:text-base font-medium text-gray-900">
-                {months[selectedMonth - 1].label} de {selectedYear}
+                {MONTHS[selectedMonth - 1].label} de {selectedYear}
               </div>
             </div>
 
@@ -138,6 +107,7 @@ export default function DashboardPage() {
               variant="outline"
               size="icon"
               onClick={() => navigateMonth('next')}
+              aria-label="Próximo mês"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -148,7 +118,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Select
               label="Mês"
-              options={months.map(month => ({
+              options={MONTHS.map(month => ({
                 value: month.value.toString(),
                 label: month.label
               }))}
@@ -205,10 +175,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-base sm:text-2xl font-bold">
-                {initialBalance.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
+                {formatCurrency(initialBalance)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Fim do mês anterior
@@ -223,13 +190,10 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-base sm:text-2xl font-bold text-green-600">
-              {totalIncome.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
+              {formatCurrency(totalIncome)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {months[selectedMonth - 1].label}
+              {MONTHS[selectedMonth - 1].label}
             </p>
           </CardContent>
         </Card>
@@ -241,13 +205,10 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-base sm:text-2xl font-bold text-red-600">
-              {totalExpense.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
+              {formatCurrency(totalExpense)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {months[selectedMonth - 1].label}
+              {MONTHS[selectedMonth - 1].label}
             </p>
           </CardContent>
         </Card>
@@ -259,10 +220,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className={`text-base sm:text-2xl font-bold ${monthlyResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {monthlyResult.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
+              {formatCurrency(monthlyResult)}
             </div>
             <p className="text-xs text-muted-foreground">
               Receitas - Despesas
@@ -277,10 +235,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className={`text-base sm:text-2xl font-bold ${finalBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              {finalBalance.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
+              {formatCurrency(finalBalance)}
             </div>
             <p className="text-xs text-muted-foreground">
               Fim do mês
@@ -303,10 +258,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl sm:text-2xl font-bold">
-                    {account.balance.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
+                    {formatCurrency(account.balance)}
                   </div>
                   <p className="text-xs text-muted-foreground capitalize">
                     {account.type.toLowerCase()}

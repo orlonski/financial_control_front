@@ -8,11 +8,27 @@ import { Select } from '@/components/ui/input'
 import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar, CheckCircle2, Circle } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { formatCurrency } from '@/lib/utils'
+import { MONTHS, getYearsRange } from '@/constants/dateOptions'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Transaction } from '@/types'
+
+interface TransactionFilterParams {
+  limit?: number
+  startDate?: string
+  endDate?: string
+  type?: 'INCOME' | 'EXPENSE'
+  accountId?: string
+  categoryId?: string
+  creditCardId?: string
+}
 
 export default function TransactionsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { success, error: showError } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   // Filter states
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -23,25 +39,10 @@ export default function TransactionsPage() {
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>('')
   const [togglingTransactionId, setTogglingTransactionId] = useState<string | null>(null)
 
-  const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-  const months = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' },
-  ]
+  const years = getYearsRange(5)
 
   // Build filter params
-  const filterParams: any = { limit: 100 }
+  const filterParams: TransactionFilterParams = { limit: 100 }
   if (selectedMonth !== '') {
     const startDate = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split('T')[0]
     const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
@@ -84,20 +85,25 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ['category-report'] })
       queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
       queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      success('Transação excluída com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao excluir transação')
     },
   })
 
   const togglePaidMutation = useMutation({
     mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
       transactionsApi.updatePaidStatus(id, paid),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       setTogglingTransactionId(null)
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      success(variables.paid ? 'Transação marcada como paga!' : 'Transação marcada como não paga!')
     },
-    onError: (error) => {
+    onError: () => {
       setTogglingTransactionId(null)
-      alert('Erro ao atualizar status da transação: ' + error)
+      showError('Erro ao atualizar status da transação')
     }
   })
 
@@ -105,8 +111,15 @@ export default function TransactionsPage() {
     navigate(`/transactions/${transaction.id}/edit`)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta transação?')) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Transação',
+      description: 'Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(id)
     }
   }
@@ -164,6 +177,8 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
+
       <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transações</h1>
@@ -197,7 +212,7 @@ export default function TransactionsPage() {
               label="Mês"
               options={[
                 { value: '', label: 'Todos os meses' },
-                ...months.map(month => ({
+                ...MONTHS.map(month => ({
                   value: month.value.toString(),
                   label: month.label
                 }))
@@ -322,7 +337,7 @@ export default function TransactionsPage() {
                         className="h-8 w-8"
                         onClick={() => handleTogglePaid(transaction)}
                         disabled={togglingTransactionId === transaction.id}
-                        title={transaction.paid ? 'Marcar como não pago' : 'Marcar como pago'}
+                        aria-label={transaction.paid ? 'Marcar como não pago' : 'Marcar como pago'}
                       >
                         {togglingTransactionId === transaction.id ? (
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
@@ -337,6 +352,7 @@ export default function TransactionsPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleEdit(transaction)}
+                        aria-label="Editar transação"
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -345,6 +361,7 @@ export default function TransactionsPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleDelete(transaction.id)}
+                        aria-label="Excluir transação"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -356,10 +373,7 @@ export default function TransactionsPage() {
                       transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {transaction.type === 'INCOME' ? '+' : '-'}
-                      {transaction.amount.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
+                      {formatCurrency(transaction.amount)}
                     </div>
                     <div className="text-xs sm:text-sm text-gray-500 flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />

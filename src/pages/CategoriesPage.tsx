@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { Plus, Edit, Trash2, Tag } from 'lucide-react'
+import { SELECTABLE_COLORS, CATEGORY_ICONS } from '@/constants/colors'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Category } from '@/types'
 
 const categorySchema = z.object({
@@ -25,21 +28,13 @@ const categoryTypes = [
   { value: 'EXPENSE', label: 'Despesa' },
 ]
 
-const colors = [
-  '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
-  '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'
-]
-
-const icons = [
-  '🍔', '🚗', '🏠', '⚡', '📱', '👕', '💊', '🎬',
-  '✈️', '🎓', '💼', '💰', '🎁', '🏥', '🛒', '🍕'
-]
-
 export default function CategoriesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const queryClient = useQueryClient()
+  const { success, error: showError } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
@@ -52,6 +47,10 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       setIsCreateOpen(false)
       reset()
+      success('Categoria criada com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao criar categoria')
     },
   })
 
@@ -63,6 +62,10 @@ export default function CategoriesPage() {
       setIsEditOpen(false)
       setEditingCategory(null)
       reset()
+      success('Categoria atualizada com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao atualizar categoria')
     },
   })
 
@@ -70,6 +73,10 @@ export default function CategoriesPage() {
     mutationFn: categoriesApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+      success('Categoria excluída com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao excluir categoria. Verifique se não há transações vinculadas.')
     },
   })
 
@@ -102,13 +109,20 @@ export default function CategoriesPage() {
     setEditingCategory(category)
     setValue('name', category.name)
     setValue('type', category.type)
-    setValue('color', category.color || colors[0])
-    setValue('icon', category.icon || icons[0])
+    setValue('color', category.color || SELECTABLE_COLORS[0])
+    setValue('icon', category.icon || CATEGORY_ICONS[0])
     setIsEditOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Categoria',
+      description: 'Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(id)
     }
   }
@@ -146,6 +160,8 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Categorias</h1>
@@ -196,7 +212,7 @@ export default function CategoriesPage() {
                           <span className="text-lg">{category.icon}</span>
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: category.color || colors[0] }}
+                            style={{ backgroundColor: category.color || SELECTABLE_COLORS[0] }}
                           />
                           <CardTitle className="text-lg">{category.name}</CardTitle>
                         </div>
@@ -205,6 +221,7 @@ export default function CategoriesPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(category)}
+                            aria-label="Editar categoria"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -212,6 +229,7 @@ export default function CategoriesPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(category.id)}
+                            aria-label="Excluir categoria"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -248,7 +266,7 @@ export default function CategoriesPage() {
                           <span className="text-lg">{category.icon}</span>
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: category.color || colors[0] }}
+                            style={{ backgroundColor: category.color || SELECTABLE_COLORS[0] }}
                           />
                           <CardTitle className="text-lg">{category.name}</CardTitle>
                         </div>
@@ -257,6 +275,7 @@ export default function CategoriesPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(category)}
+                            aria-label="Editar categoria"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -264,6 +283,7 @@ export default function CategoriesPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(category.id)}
+                            aria-label="Excluir categoria"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -308,7 +328,7 @@ export default function CategoriesPage() {
                 Ícone
               </label>
               <div className="grid grid-cols-8 gap-2">
-                {icons.map((icon) => (
+                {CATEGORY_ICONS.map((icon) => (
                   <button
                     key={icon}
                     type="button"
@@ -316,6 +336,7 @@ export default function CategoriesPage() {
                       selectedIcon === icon ? 'border-gray-900' : 'border-gray-300'
                     }`}
                     onClick={() => setValue('icon', icon)}
+                    aria-label={`Selecionar ícone ${icon}`}
                   >
                     {icon}
                   </button>
@@ -327,8 +348,8 @@ export default function CategoriesPage() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Cor
               </label>
-              <div className="flex space-x-2">
-                {colors.map((color) => (
+              <div className="flex flex-wrap gap-2">
+                {SELECTABLE_COLORS.slice(0, 8).map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -337,6 +358,7 @@ export default function CategoriesPage() {
                     }`}
                     style={{ backgroundColor: color }}
                     onClick={() => setValue('color', color)}
+                    aria-label={`Selecionar cor ${color}`}
                   />
                 ))}
               </div>
@@ -390,7 +412,7 @@ export default function CategoriesPage() {
                 Ícone
               </label>
               <div className="grid grid-cols-8 gap-2">
-                {icons.map((icon) => (
+                {CATEGORY_ICONS.map((icon) => (
                   <button
                     key={icon}
                     type="button"
@@ -398,6 +420,7 @@ export default function CategoriesPage() {
                       selectedIcon === icon ? 'border-gray-900' : 'border-gray-300'
                     }`}
                     onClick={() => setValue('icon', icon)}
+                    aria-label={`Selecionar ícone ${icon}`}
                   >
                     {icon}
                   </button>
@@ -409,8 +432,8 @@ export default function CategoriesPage() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Cor
               </label>
-              <div className="flex space-x-2">
-                {colors.map((color) => (
+              <div className="flex flex-wrap gap-2">
+                {SELECTABLE_COLORS.slice(0, 8).map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -419,6 +442,7 @@ export default function CategoriesPage() {
                     }`}
                     style={{ backgroundColor: color }}
                     onClick={() => setValue('color', color)}
+                    aria-label={`Selecionar cor ${color}`}
                   />
                 ))}
               </div>

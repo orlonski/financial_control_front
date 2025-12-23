@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,7 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@
 import { Plus, Edit, Trash2, ArrowLeftRight, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import type { Transfer, Account } from '@/types'
+import { formatCurrency } from '@/lib/utils'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
+import type { Transfer } from '@/types'
 
 const transferSchema = z.object({
   amount: z.number().positive('Valor deve ser positivo'),
@@ -31,6 +34,8 @@ export default function TransfersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null)
   const queryClient = useQueryClient()
+  const { success, error: showError } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const { data: transfers = [], isLoading: transfersLoading } = useQuery({
     queryKey: ['transfers'],
@@ -49,6 +54,10 @@ export default function TransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
       setIsCreateOpen(false)
       reset()
+      success('Transferência criada com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao criar transferência')
     },
   })
 
@@ -61,6 +70,10 @@ export default function TransfersPage() {
       setIsEditOpen(false)
       setEditingTransfer(null)
       reset()
+      success('Transferência atualizada com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao atualizar transferência')
     },
   })
 
@@ -69,6 +82,10 @@ export default function TransfersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transfers'] })
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      success('Transferência excluída com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao excluir transferência')
     },
   })
 
@@ -106,8 +123,15 @@ export default function TransfersPage() {
     setIsEditOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta transferência?')) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Transferência',
+      description: 'Tem certeza que deseja excluir esta transferência? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(id)
     }
   }
@@ -147,6 +171,8 @@ export default function TransfersPage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transferências</h1>
@@ -209,10 +235,7 @@ export default function TransfersPage() {
                   <div className="flex items-center space-x-2">
                     <div className="text-right">
                       <div className="text-lg font-bold text-gray-900">
-                        {transfer.amount.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        {formatCurrency(transfer.amount)}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -224,6 +247,7 @@ export default function TransfersPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(transfer)}
+                        aria-label="Editar transferência"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -231,6 +255,7 @@ export default function TransfersPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(transfer.id)}
+                        aria-label="Excluir transferência"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

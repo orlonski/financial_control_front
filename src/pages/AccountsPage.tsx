@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,6 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { Plus, Edit, Trash2, Wallet } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import { SELECTABLE_COLORS } from '@/constants/colors'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { Account } from '@/types'
 
 const accountSchema = z.object({
@@ -27,16 +31,13 @@ const accountTypes = [
   { value: 'INVESTMENT', label: 'Investimento' },
 ]
 
-const colors = [
-  '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
-  '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'
-]
-
 export default function AccountsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const queryClient = useQueryClient()
+  const { success, error: showError } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['accounts-with-balances'],
@@ -47,8 +48,13 @@ export default function AccountsPage() {
     mutationFn: accountsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setIsCreateOpen(false)
       reset()
+      success('Conta criada com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao criar conta')
     },
   })
 
@@ -57,9 +63,14 @@ export default function AccountsPage() {
       accountsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setIsEditOpen(false)
       setEditingAccount(null)
       reset()
+      success('Conta atualizada com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao atualizar conta')
     },
   })
 
@@ -67,6 +78,11 @@ export default function AccountsPage() {
     mutationFn: accountsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      success('Conta excluída com sucesso!')
+    },
+    onError: () => {
+      showError('Erro ao excluir conta. Verifique se não há transações vinculadas.')
     },
   })
 
@@ -100,12 +116,19 @@ export default function AccountsPage() {
     setValue('name', account.name)
     setValue('type', account.type)
     setValue('initialBalance', Number(account.initialBalance))
-    setValue('color', account.color || colors[0])
+    setValue('color', account.color || SELECTABLE_COLORS[0])
     setIsEditOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta conta?')) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Conta',
+      description: 'Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(id)
     }
   }
@@ -140,6 +163,8 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Contas</h1>
@@ -176,7 +201,7 @@ export default function AccountsPage() {
                   <div className="flex items-center space-x-2">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: account.color || colors[0] }}
+                      style={{ backgroundColor: account.color || SELECTABLE_COLORS[0] }}
                     />
                     <CardTitle className="text-lg">{account.name}</CardTitle>
                   </div>
@@ -185,6 +210,7 @@ export default function AccountsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEdit(account)}
+                      aria-label="Editar conta"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -192,6 +218,7 @@ export default function AccountsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(account.id)}
+                      aria-label="Excluir conta"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -203,10 +230,7 @@ export default function AccountsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {account.balance.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
+                  {formatCurrency(account.balance)}
                 </div>
                 <p className="text-sm text-gray-600">
                   Saldo atual
@@ -252,8 +276,8 @@ export default function AccountsPage() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Cor da conta
               </label>
-              <div className="flex space-x-2">
-                {colors.map((color) => (
+              <div className="flex flex-wrap gap-2">
+                {SELECTABLE_COLORS.slice(0, 8).map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -262,6 +286,7 @@ export default function AccountsPage() {
                     }`}
                     style={{ backgroundColor: color }}
                     onClick={() => setValue('color', color)}
+                    aria-label={`Selecionar cor ${color}`}
                   />
                 ))}
               </div>
@@ -323,8 +348,8 @@ export default function AccountsPage() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Cor da conta
               </label>
-              <div className="flex space-x-2">
-                {colors.map((color) => (
+              <div className="flex flex-wrap gap-2">
+                {SELECTABLE_COLORS.slice(0, 8).map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -333,6 +358,7 @@ export default function AccountsPage() {
                     }`}
                     style={{ backgroundColor: color }}
                     onClick={() => setValue('color', color)}
+                    aria-label={`Selecionar cor ${color}`}
                   />
                 ))}
               </div>

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,15 +5,24 @@ import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
 import { BarChart3, PieChart, TrendingUp, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { useState } from 'react'
+import { formatCurrency } from '@/lib/utils'
+import { MONTHS, getYearsRange } from '@/constants/dateOptions'
+import { useMonthNavigation } from '@/hooks/useMonthNavigation'
+import { CHART_COLORS } from '@/constants/colors'
 
 export default function ReportsPage() {
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const {
+    selectedYear,
+    selectedMonth,
+    setSelectedYear,
+    setSelectedMonth,
+    navigateMonth,
+    goToCurrentMonth,
+  } = useMonthNavigation()
   const [reportType, setReportType] = useState<'category' | 'cashflow'>('category')
 
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const currentMonth = currentDate.getMonth() + 1
+  const years = getYearsRange(5)
 
   const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
   const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
@@ -31,48 +39,7 @@ export default function ReportsPage() {
     enabled: reportType === 'cashflow',
   })
 
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-  const months = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' },
-  ]
-
-  const COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
-
   const isLoading = categoryLoading || cashFlowLoading
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      if (selectedMonth === 1) {
-        setSelectedMonth(12)
-        setSelectedYear(selectedYear - 1)
-      } else {
-        setSelectedMonth(selectedMonth - 1)
-      }
-    } else {
-      if (selectedMonth === 12) {
-        setSelectedMonth(1)
-        setSelectedYear(selectedYear + 1)
-      } else {
-        setSelectedMonth(selectedMonth + 1)
-      }
-    }
-  }
-
-  const goToCurrentMonth = () => {
-    setSelectedYear(currentYear)
-    setSelectedMonth(currentMonth)
-  }
 
   if (isLoading) {
     return (
@@ -125,13 +92,14 @@ export default function ReportsPage() {
                 variant="outline"
                 size="icon"
                 onClick={() => navigateMonth('prev')}
+                aria-label="Mês anterior"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
 
               <div className="text-center">
                 <div className="text-sm sm:text-base font-medium text-gray-900">
-                  {months[selectedMonth - 1].label} de {selectedYear}
+                  {MONTHS[selectedMonth - 1].label} de {selectedYear}
                 </div>
               </div>
 
@@ -139,6 +107,7 @@ export default function ReportsPage() {
                 variant="outline"
                 size="icon"
                 onClick={() => navigateMonth('next')}
+                aria-label="Próximo mês"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -166,7 +135,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-2 gap-2">
               <Select
                 label="Mês"
-                options={months.map(month => ({
+                options={MONTHS.map(month => ({
                   value: month.value.toString(),
                   label: month.label
                 }))}
@@ -198,7 +167,7 @@ export default function ReportsPage() {
                 Despesas por Categoria
               </CardTitle>
               <CardDescription>
-                {months[selectedMonth - 1].label} de {selectedYear}
+                {MONTHS[selectedMonth - 1].label} de {selectedYear}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -209,7 +178,7 @@ export default function ReportsPage() {
                       data={categoryReport.map((item, index) => ({
                         name: item.category.name,
                         value: item.total,
-                        color: COLORS[index % COLORS.length]
+                        color: CHART_COLORS[index % CHART_COLORS.length]
                       }))}
                       cx="50%"
                       cy="50%"
@@ -220,10 +189,10 @@ export default function ReportsPage() {
                       dataKey="value"
                     >
                       {categoryReport.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   </RechartsPieChart>
                 </ResponsiveContainer>
               ) : (
@@ -251,17 +220,17 @@ export default function ReportsPage() {
                   <BarChart data={categoryReport.map((item, index) => ({
                     name: item.category.name,
                     value: item.total,
-                    color: COLORS[index % COLORS.length]
+                    color: CHART_COLORS[index % CHART_COLORS.length]
                   }))}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="name" 
+                    <XAxis
+                      dataKey="name"
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
                     <YAxis />
-                    <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                     <Bar dataKey="value" fill="#3B82F6" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -289,7 +258,7 @@ export default function ReportsPage() {
                       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                         <div
                           className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
                         />
                         <span className="font-medium text-sm sm:text-base truncate">{item.category.name}</span>
                         <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
@@ -298,7 +267,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="text-left sm:text-right pl-5 sm:pl-0">
                         <div className="font-bold text-base sm:text-lg">
-                          R$ {item.total.toLocaleString('pt-BR')}
+                          {formatCurrency(item.total)}
                         </div>
                         <div className="text-xs sm:text-sm text-gray-500">
                           {((item.total / categoryReport.reduce((sum, cat) => sum + cat.total, 0)) * 100).toFixed(1)}% do total
@@ -341,33 +310,33 @@ export default function ReportsPage() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="period" />
                     <YAxis />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [
-                        `R$ ${Number(value).toLocaleString('pt-BR')}`,
-                        name === 'cumulativeBalance' ? 'Saldo Acumulado' : 
-                        name === 'income' ? 'Receitas' : 
+                        formatCurrency(Number(value)),
+                        name === 'cumulativeBalance' ? 'Saldo Acumulado' :
+                        name === 'income' ? 'Receitas' :
                         name === 'expense' ? 'Despesas' : name
                       ]}
                       labelFormatter={(label) => `Dia ${label}`}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="income" 
-                      stroke="#10B981" 
+                    <Line
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#10B981"
                       strokeWidth={2}
                       name="Receitas"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="expense" 
-                      stroke="#EF4444" 
+                    <Line
+                      type="monotone"
+                      dataKey="expense"
+                      stroke="#EF4444"
                       strokeWidth={2}
                       name="Despesas"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cumulativeBalance" 
-                      stroke="#3B82F6" 
+                    <Line
+                      type="monotone"
+                      dataKey="cumulativeBalance"
+                      stroke="#3B82F6"
                       strokeWidth={3}
                       name="Saldo Acumulado"
                     />
@@ -391,7 +360,7 @@ export default function ReportsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-base sm:text-2xl font-bold text-green-600">
-                    R$ {cashFlowData.reduce((sum, item) => sum + item.income, 0).toLocaleString('pt-BR')}
+                    {formatCurrency(cashFlowData.reduce((sum, item) => sum + item.income, 0))}
                   </div>
                 </CardContent>
               </Card>
@@ -403,7 +372,7 @@ export default function ReportsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-base sm:text-2xl font-bold text-red-600">
-                    R$ {cashFlowData.reduce((sum, item) => sum + item.expense, 0).toLocaleString('pt-BR')}
+                    {formatCurrency(cashFlowData.reduce((sum, item) => sum + item.expense, 0))}
                   </div>
                 </CardContent>
               </Card>
@@ -419,7 +388,7 @@ export default function ReportsPage() {
                       ? 'text-green-600'
                       : 'text-red-600'
                   }`}>
-                    R$ {(cashFlowData[cashFlowData.length - 1]?.cumulativeBalance || 0).toLocaleString('pt-BR')}
+                    {formatCurrency(cashFlowData[cashFlowData.length - 1]?.cumulativeBalance || 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -436,8 +405,8 @@ export default function ReportsPage() {
                       ? 'text-green-600'
                       : 'text-red-600'
                   }`}>
-                    R$ {(cashFlowData.reduce((sum, item) => sum + item.income, 0) -
-                         cashFlowData.reduce((sum, item) => sum + item.expense, 0)).toLocaleString('pt-BR')}
+                    {formatCurrency(cashFlowData.reduce((sum, item) => sum + item.income, 0) -
+                         cashFlowData.reduce((sum, item) => sum + item.expense, 0))}
                   </div>
                 </CardContent>
               </Card>
