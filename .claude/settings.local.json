@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/backend/src/services/**)"
+      "Read(//c/backend/src/services/**)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

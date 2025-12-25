@@ -6,6 +6,8 @@ import Layout from '@/components/Layout'
 // Lazy loading das páginas para melhor performance mobile
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const AccountsPage = lazy(() => import('@/pages/AccountsPage'))
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
@@ -42,6 +44,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>
