@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { RefreshCw } from 'lucide-react'
 
 interface PullToRefreshProps {
@@ -15,10 +15,9 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
   const [isRefreshing, setIsRefreshing] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const touchStartY = useRef(0)
-  const touchCurrentY = useRef(0)
   const isPulling = useRef(false)
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || isRefreshing) return
 
     const container = containerRef.current
@@ -31,7 +30,7 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     isPulling.current = true
   }, [disabled, isRefreshing])
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isPulling.current || disabled || isRefreshing) return
 
     const container = containerRef.current
@@ -44,8 +43,8 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
       return
     }
 
-    touchCurrentY.current = e.touches[0].clientY
-    const delta = touchCurrentY.current - touchStartY.current
+    const touchCurrentY = e.touches[0].clientY
+    const delta = touchCurrentY - touchStartY.current
 
     if (delta > 0) {
       // Prevent default scroll when pulling down
@@ -76,6 +75,22 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     }
   }, [pullDistance, onRefresh, disabled, isRefreshing])
 
+  // Use native event listeners with { passive: false } to allow preventDefault
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd])
+
   const progress = Math.min(pullDistance / PULL_THRESHOLD, 1)
   const rotation = progress * 180
 
@@ -83,9 +98,6 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     <div
       ref={containerRef}
       className="relative h-full overflow-auto"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       {/* Pull indicator */}
       <div
