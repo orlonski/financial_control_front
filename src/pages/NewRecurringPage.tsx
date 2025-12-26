@@ -8,9 +8,9 @@ import { invalidateAll } from '@/lib/queryInvalidation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Infinity } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
-import { format } from 'date-fns'
+import { format, addMonths, addYears, addWeeks, addDays } from 'date-fns'
 import type { Account, Category, CreditCard } from '@/types'
 
 const recurringSchema = z.object({
@@ -20,6 +20,8 @@ const recurringSchema = z.object({
   interval: z.enum(['DAY', 'WEEK', 'MONTH', 'YEAR']),
   intervalCount: z.number().min(1, 'Mínimo 1').max(30, 'Máximo 30'),
   startDate: z.string().min(1, 'Data de início é obrigatória'),
+  durationType: z.enum(['infinite', 'months', 'date']),
+  durationMonths: z.number().min(1).max(120).optional(),
   endDate: z.string().optional(),
   accountId: z.string().min(1, 'Conta é obrigatória'),
   categoryId: z.string().min(1, 'Categoria é obrigatória'),
@@ -33,6 +35,12 @@ const intervalOptions = [
   { value: 'WEEK', label: 'Semana(s)' },
   { value: 'MONTH', label: 'Mês(es)' },
   { value: 'YEAR', label: 'Ano(s)' },
+]
+
+const durationOptions = [
+  { value: 'infinite', label: 'Sem fim (infinito)' },
+  { value: 'months', label: 'Por quantidade de meses' },
+  { value: 'date', label: 'Até uma data específica' },
 ]
 
 export default function NewRecurringPage() {
@@ -80,14 +88,35 @@ export default function NewRecurringPage() {
       interval: 'MONTH',
       intervalCount: 1,
       startDate: format(new Date(), 'yyyy-MM-dd'),
+      durationType: 'infinite',
+      durationMonths: 12,
     },
   })
 
   const selectedType = watch('type')
+  const durationType = watch('durationType')
 
   const filteredCategories = categories.filter((c: Category) => c.type === selectedType)
 
+  // Calcula a data final baseada na duração escolhida
+  const calculateEndDate = (data: RecurringForm): string | undefined => {
+    if (data.durationType === 'infinite') {
+      return undefined // Sem data final
+    }
+    if (data.durationType === 'date') {
+      return data.endDate || undefined
+    }
+    if (data.durationType === 'months' && data.durationMonths) {
+      const startDate = new Date(data.startDate)
+      const endDate = addMonths(startDate, data.durationMonths)
+      return format(endDate, 'yyyy-MM-dd')
+    }
+    return undefined
+  }
+
   const onSubmit = (data: RecurringForm) => {
+    const endDate = calculateEndDate(data)
+
     createMutation.mutate({
       type: data.type,
       amount: data.amount,
@@ -95,7 +124,7 @@ export default function NewRecurringPage() {
       interval: data.interval,
       intervalCount: data.intervalCount,
       startDate: data.startDate,
-      endDate: data.endDate || undefined,
+      endDate,
       accountId: data.accountId,
       categoryId: data.categoryId,
       creditCardId: data.creditCardId || undefined,
@@ -174,19 +203,39 @@ export default function NewRecurringPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Data de início"
+              type="date"
+              {...register('startDate')}
+              error={errors.startDate?.message}
+            />
+
+            <Select
+              label="Duração"
+              options={durationOptions}
+              {...register('durationType')}
+            />
+
+            {durationType === 'months' && (
               <Input
-                label="Data de início"
-                type="date"
-                {...register('startDate')}
-                error={errors.startDate?.message}
+                label="Quantidade de meses"
+                type="number"
+                min="1"
+                max="120"
+                placeholder="Ex: 12"
+                {...register('durationMonths', { valueAsNumber: true })}
+                error={errors.durationMonths?.message}
               />
+            )}
+
+            {durationType === 'date' && (
               <Input
-                label="Data final (opcional)"
+                label="Data final"
                 type="date"
                 {...register('endDate')}
+                error={errors.endDate?.message}
               />
-            </div>
+            )}
 
             <Select
               label="Conta"

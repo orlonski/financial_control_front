@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
-import { format } from 'date-fns'
+import { format, addMonths } from 'date-fns'
 import type { Account, Category, CreditCard } from '@/types'
 
 const recurringSchema = z.object({
@@ -21,6 +21,8 @@ const recurringSchema = z.object({
   interval: z.enum(['DAY', 'WEEK', 'MONTH', 'YEAR']),
   intervalCount: z.number().min(1, 'Mínimo 1').max(30, 'Máximo 30'),
   startDate: z.string().min(1, 'Data de início é obrigatória'),
+  durationType: z.enum(['infinite', 'months', 'date']),
+  durationMonths: z.number().min(1).max(120).optional(),
   endDate: z.string().optional(),
   accountId: z.string().min(1, 'Conta é obrigatória'),
   categoryId: z.string().min(1, 'Categoria é obrigatória'),
@@ -34,6 +36,12 @@ const intervalOptions = [
   { value: 'WEEK', label: 'Semana(s)' },
   { value: 'MONTH', label: 'Mês(es)' },
   { value: 'YEAR', label: 'Ano(s)' },
+]
+
+const durationOptions = [
+  { value: 'infinite', label: 'Sem fim (infinito)' },
+  { value: 'months', label: 'Por quantidade de meses' },
+  { value: 'date', label: 'Até uma data específica' },
 ]
 
 export default function EditRecurringPage() {
@@ -63,19 +71,38 @@ export default function EditRecurringPage() {
     queryFn: creditCardsApi.getAll,
   })
 
+  // Calcula a data final baseada na duração escolhida
+  const calculateEndDate = (data: RecurringForm): string | undefined => {
+    if (data.durationType === 'infinite') {
+      return undefined
+    }
+    if (data.durationType === 'date') {
+      return data.endDate || undefined
+    }
+    if (data.durationType === 'months' && data.durationMonths) {
+      const startDate = new Date(data.startDate)
+      const endDate = addMonths(startDate, data.durationMonths)
+      return format(endDate, 'yyyy-MM-dd')
+    }
+    return undefined
+  }
+
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<RecurringForm>) => recurringApi.update(id!, {
-      type: data.type,
-      amount: data.amount,
-      description: data.description,
-      interval: data.interval,
-      intervalCount: data.intervalCount,
-      startDate: data.startDate,
-      endDate: data.endDate || undefined,
-      accountId: data.accountId,
-      categoryId: data.categoryId,
-      creditCardId: data.creditCardId || undefined,
-    }),
+    mutationFn: (data: Partial<RecurringForm>) => {
+      const endDate = calculateEndDate(data as RecurringForm)
+      return recurringApi.update(id!, {
+        type: data.type,
+        amount: data.amount,
+        description: data.description,
+        interval: data.interval,
+        intervalCount: data.intervalCount,
+        startDate: data.startDate,
+        endDate,
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        creditCardId: data.creditCardId || undefined,
+      })
+    },
     onSuccess: () => {
       invalidateAll(queryClient)
       success('Transação recorrente atualizada!')
@@ -99,6 +126,12 @@ export default function EditRecurringPage() {
 
   useEffect(() => {
     if (recurring) {
+      // Determina o tipo de duração baseado no endDate existente
+      let durationType: 'infinite' | 'months' | 'date' = 'infinite'
+      if (recurring.endDate) {
+        durationType = 'date'
+      }
+
       reset({
         type: recurring.type || 'EXPENSE',
         amount: recurring.amount || 0,
@@ -106,6 +139,8 @@ export default function EditRecurringPage() {
         interval: recurring.interval || 'MONTH',
         intervalCount: recurring.intervalCount || 1,
         startDate: recurring.startDate ? format(new Date(recurring.startDate), 'yyyy-MM-dd') : '',
+        durationType,
+        durationMonths: 12,
         endDate: recurring.endDate ? format(new Date(recurring.endDate), 'yyyy-MM-dd') : '',
         accountId: recurring.accountId || '',
         categoryId: recurring.categoryId || '',
@@ -115,6 +150,7 @@ export default function EditRecurringPage() {
   }, [recurring, reset])
 
   const selectedType = watch('type')
+  const durationType = watch('durationType')
 
   const filteredCategories = categories.filter((c: Category) => c.type === selectedType)
 
@@ -234,19 +270,39 @@ export default function EditRecurringPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Data de início"
+              type="date"
+              {...register('startDate')}
+              error={errors.startDate?.message}
+            />
+
+            <Select
+              label="Duração"
+              options={durationOptions}
+              {...register('durationType')}
+            />
+
+            {durationType === 'months' && (
               <Input
-                label="Data de início"
-                type="date"
-                {...register('startDate')}
-                error={errors.startDate?.message}
+                label="Quantidade de meses"
+                type="number"
+                min="1"
+                max="120"
+                placeholder="Ex: 12"
+                {...register('durationMonths', { valueAsNumber: true })}
+                error={errors.durationMonths?.message}
               />
+            )}
+
+            {durationType === 'date' && (
               <Input
-                label="Data final (opcional)"
+                label="Data final"
                 type="date"
                 {...register('endDate')}
+                error={errors.endDate?.message}
               />
-            </div>
+            )}
 
             <Select
               label="Conta"

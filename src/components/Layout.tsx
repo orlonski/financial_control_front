@@ -1,6 +1,8 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
+import { recurringApi } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import {
   Home,
@@ -45,7 +47,33 @@ const EDGE_WIDTH = 30
 export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Automação: gera transações recorrentes 1x por dia
+  useEffect(() => {
+    const checkAndGenerateRecurring = async () => {
+      const today = new Date().toISOString().split('T')[0]
+      const lastCheck = localStorage.getItem('lastRecurringCheck')
+
+      if (lastCheck !== today) {
+        try {
+          await recurringApi.generate()
+          localStorage.setItem('lastRecurringCheck', today)
+          // Invalida queries para atualizar dados
+          queryClient.invalidateQueries({ queryKey: ['transactions'] })
+          queryClient.invalidateQueries({ queryKey: ['recurring'] })
+          queryClient.invalidateQueries({ queryKey: ['accounts'] })
+          queryClient.invalidateQueries({ queryKey: ['creditCards'] })
+        } catch (error) {
+          // Silencioso - não bloqueia o usuário
+          console.error('Erro ao gerar recorrências:', error)
+        }
+      }
+    }
+
+    checkAndGenerateRecurring()
+  }, [])
 
   // Swipe gesture state
   const touchStartX = useRef(0)
