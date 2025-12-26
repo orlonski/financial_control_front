@@ -68,6 +68,7 @@ export interface Transaction {
   description: string
   notes?: string
   paid?: boolean
+  paidAt?: string
   accountId: string
   categoryId: string
   creditCardId?: string

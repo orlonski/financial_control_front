@@ -12,6 +12,7 @@ import { formatCurrency } from '@/lib/utils'
 import { MONTHS, getYearsRange } from '@/constants/dateOptions'
 import { useToast } from '@/components/ui/toast'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
+import { PaymentModal } from '@/components/PaymentModal'
 import type { Transaction } from '@/types'
 
 interface TransactionFilterParams {
@@ -32,12 +33,14 @@ export default function TransactionsPage() {
 
   // Filter states
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState<number | ''>('')
+  const [selectedMonth, setSelectedMonth] = useState<number | ''>(new Date().getMonth() + 1)
   const [selectedType, setSelectedType] = useState<'INCOME' | 'EXPENSE' | ''>('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>('')
   const [togglingTransactionId, setTogglingTransactionId] = useState<string | null>(null)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
 
   const years = getYearsRange(5)
 
@@ -93,13 +96,16 @@ export default function TransactionsPage() {
   })
 
   const togglePaidMutation = useMutation({
-    mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
-      transactionsApi.updatePaidStatus(id, paid),
+    mutationFn: ({ id, data }: { id: string; data: { paid: boolean; paidAt?: string; accountId?: string } }) =>
+      transactionsApi.updatePaidStatus(id, data),
     onSuccess: (_, variables) => {
       setTogglingTransactionId(null)
+      setPaymentModalOpen(false)
+      setSelectedTransaction(null)
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
-      success(variables.paid ? 'Transação marcada como paga!' : 'Transação marcada como não paga!')
+      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      success(variables.data.paid ? 'Transação marcada como paga!' : 'Transação marcada como não paga!')
     },
     onError: () => {
       setTogglingTransactionId(null)
@@ -125,10 +131,30 @@ export default function TransactionsPage() {
   }
 
   const handleTogglePaid = (transaction: Transaction) => {
-    setTogglingTransactionId(transaction.id)
+    if (transaction.paid) {
+      // If already paid, just unmark it
+      setTogglingTransactionId(transaction.id)
+      togglePaidMutation.mutate({
+        id: transaction.id,
+        data: { paid: false }
+      })
+    } else {
+      // If not paid, open modal to get payment details
+      setSelectedTransaction(transaction)
+      setPaymentModalOpen(true)
+    }
+  }
+
+  const handleConfirmPayment = (data: { paidAt: string; accountId: string }) => {
+    if (!selectedTransaction) return
+    setTogglingTransactionId(selectedTransaction.id)
     togglePaidMutation.mutate({
-      id: transaction.id,
-      paid: !transaction.paid
+      id: selectedTransaction.id,
+      data: {
+        paid: true,
+        paidAt: data.paidAt,
+        accountId: data.accountId
+      }
     })
   }
 
@@ -178,6 +204,14 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6">
       {ConfirmDialog}
+      <PaymentModal
+        open={paymentModalOpen}
+        onOpenChange={setPaymentModalOpen}
+        transaction={selectedTransaction}
+        accounts={accounts}
+        onConfirm={handleConfirmPayment}
+        isLoading={togglePaidMutation.isPending}
+      />
 
       <div className="flex flex-col gap-4">
         <div>

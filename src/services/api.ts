@@ -210,8 +210,8 @@ export const transactionsApi = {
     await api.delete(`/transactions/${id}`)
   },
 
-  updatePaidStatus: async (id: string, paid: boolean): Promise<Transaction> => {
-    const response = await api.patch(`/transactions/${id}/paid`, { paid })
+  updatePaidStatus: async (id: string, data: { paid: boolean; paidAt?: string; accountId?: string }): Promise<Transaction> => {
+    const response = await api.patch(`/transactions/${id}/paid`, data)
     return response.data
   },
 
