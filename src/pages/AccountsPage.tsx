@@ -13,6 +13,8 @@ import { formatCurrency } from '@/lib/utils'
 import { SELECTABLE_COLORS } from '@/constants/colors'
 import { useToast } from '@/components/ui/toast'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
+import { PullToRefresh } from '@/components/PullToRefresh'
 import type { Account } from '@/types'
 
 const accountSchema = z.object({
@@ -44,11 +46,14 @@ export default function AccountsPage() {
     queryFn: () => accountsApi.getAllWithBalances(),
   })
 
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
+
   const createMutation = useMutation({
     mutationFn: accountsApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      invalidateTransactionRelated(queryClient)
       setIsCreateOpen(false)
       reset()
       success('Conta criada com sucesso!')
@@ -62,8 +67,7 @@ export default function AccountsPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Account> }) =>
       accountsApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      invalidateTransactionRelated(queryClient)
       setIsEditOpen(false)
       setEditingAccount(null)
       reset()
@@ -77,8 +81,7 @@ export default function AccountsPage() {
   const deleteMutation = useMutation({
     mutationFn: accountsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      invalidateTransactionRelated(queryClient)
       success('Conta excluída com sucesso!')
     },
     onError: () => {
@@ -162,6 +165,7 @@ export default function AccountsPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       {ConfirmDialog}
 
@@ -385,5 +389,6 @@ export default function AccountsPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PullToRefresh>
   )
 }

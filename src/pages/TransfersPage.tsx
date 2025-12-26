@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { transfersApi, accountsApi } from '@/services/api'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
+import { PullToRefresh } from '@/components/PullToRefresh'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input, Select, Textarea } from '@/components/ui/input'
@@ -47,11 +49,14 @@ export default function TransfersPage() {
     queryFn: accountsApi.getAll,
   })
 
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
+
   const createMutation = useMutation({
     mutationFn: transfersApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transfers'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      invalidateTransactionRelated(queryClient)
       setIsCreateOpen(false)
       reset()
       success('Transferência criada com sucesso!')
@@ -65,8 +70,7 @@ export default function TransfersPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<TransferForm> }) =>
       transfersApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transfers'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      invalidateTransactionRelated(queryClient)
       setIsEditOpen(false)
       setEditingTransfer(null)
       reset()
@@ -80,8 +84,7 @@ export default function TransfersPage() {
   const deleteMutation = useMutation({
     mutationFn: transfersApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transfers'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      invalidateTransactionRelated(queryClient)
       success('Transferência excluída com sucesso!')
     },
     onError: () => {
@@ -170,6 +173,7 @@ export default function TransfersPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       {ConfirmDialog}
 
@@ -412,5 +416,6 @@ export default function TransfersPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PullToRefresh>
   )
 }

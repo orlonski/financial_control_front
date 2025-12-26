@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { reportsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,11 @@ import { formatCurrency } from '@/lib/utils'
 import { MONTHS, getYearsRange } from '@/constants/dateOptions'
 import { useMonthNavigation } from '@/hooks/useMonthNavigation'
 import { CHART_COLORS } from '@/constants/colors'
+import { PullToRefresh } from '@/components/PullToRefresh'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 
 export default function ReportsPage() {
+  const queryClient = useQueryClient()
   const {
     selectedYear,
     selectedMonth,
@@ -21,6 +24,10 @@ export default function ReportsPage() {
     goToCurrentMonth,
   } = useMonthNavigation()
   const [reportType, setReportType] = useState<'category' | 'cashflow'>('category')
+
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
 
   const years = getYearsRange(5)
 
@@ -71,6 +78,7 @@ export default function ReportsPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -415,5 +423,6 @@ export default function ReportsPage() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   )
 }

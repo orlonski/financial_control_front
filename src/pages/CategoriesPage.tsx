@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { categoriesApi } from '@/services/api'
+import { invalidateAll } from '@/lib/queryInvalidation'
+import { PullToRefresh } from '@/components/PullToRefresh'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
@@ -41,10 +43,14 @@ export default function CategoriesPage() {
     queryFn: categoriesApi.getAll,
   })
 
+  const handleRefresh = async () => {
+    invalidateAll(queryClient)
+  }
+
   const createMutation = useMutation({
     mutationFn: categoriesApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      invalidateAll(queryClient)
       setIsCreateOpen(false)
       reset()
       success('Categoria criada com sucesso!')
@@ -58,7 +64,7 @@ export default function CategoriesPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Category> }) =>
       categoriesApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      invalidateAll(queryClient)
       setIsEditOpen(false)
       setEditingCategory(null)
       reset()
@@ -72,7 +78,7 @@ export default function CategoriesPage() {
   const deleteMutation = useMutation({
     mutationFn: categoriesApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      invalidateAll(queryClient)
       success('Categoria excluída com sucesso!')
     },
     onError: () => {
@@ -159,6 +165,7 @@ export default function CategoriesPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       {ConfirmDialog}
 
@@ -469,5 +476,6 @@ export default function CategoriesPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PullToRefresh>
   )
 }

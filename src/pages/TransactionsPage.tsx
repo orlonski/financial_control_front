@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { transactionsApi, accountsApi, categoriesApi, creditCardsApi } from '@/services/api'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
+import { PullToRefresh } from '@/components/PullToRefresh'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
@@ -30,6 +32,10 @@ export default function TransactionsPage() {
   const queryClient = useQueryClient()
   const { success, error: showError } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
 
   // Filter states
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -80,14 +86,7 @@ export default function TransactionsPage() {
   const deleteMutation = useMutation({
     mutationFn: transactionsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-initial-balances'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-final-balances'] })
-      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] })
-      queryClient.invalidateQueries({ queryKey: ['category-report'] })
-      queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
-      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      invalidateTransactionRelated(queryClient)
       success('Transação excluída com sucesso!')
     },
     onError: () => {
@@ -102,9 +101,7 @@ export default function TransactionsPage() {
       setTogglingTransactionId(null)
       setPaymentModalOpen(false)
       setSelectedTransaction(null)
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts-with-balances'] })
+      invalidateTransactionRelated(queryClient)
       success(variables.data.paid ? 'Transação marcada como paga!' : 'Transação marcada como não paga!')
     },
     onError: () => {
@@ -202,6 +199,7 @@ export default function TransactionsPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       {ConfirmDialog}
       <PaymentModal
@@ -434,5 +432,6 @@ export default function TransactionsPage() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   )
 }

@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { creditCardsApi, accountsApi } from '@/services/api'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
+import { PullToRefresh } from '@/components/PullToRefresh'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
@@ -97,10 +99,14 @@ export default function CreditCardsPage() {
     queryFn: accountsApi.getAll,
   })
 
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
+
   const createMutation = useMutation({
     mutationFn: creditCardsApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      invalidateTransactionRelated(queryClient)
       setIsCreateOpen(false)
       reset()
       success('Cartão criado com sucesso!')
@@ -114,7 +120,7 @@ export default function CreditCardsPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<CreditCardType> }) =>
       creditCardsApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      invalidateTransactionRelated(queryClient)
       setIsEditOpen(false)
       setEditingCard(null)
       reset()
@@ -128,7 +134,7 @@ export default function CreditCardsPage() {
   const deleteMutation = useMutation({
     mutationFn: creditCardsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['credit-cards'] })
+      invalidateTransactionRelated(queryClient)
       success('Cartão excluído com sucesso!')
     },
     onError: () => {
@@ -224,6 +230,7 @@ export default function CreditCardsPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       {ConfirmDialog}
 
@@ -590,5 +597,6 @@ export default function CreditCardsPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PullToRefresh>
   )
 }

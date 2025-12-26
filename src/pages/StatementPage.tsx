@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { reportsApi, accountsApi } from '@/services/api'
+import { PullToRefresh } from '@/components/PullToRefresh'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/input'
@@ -73,6 +75,11 @@ export default function StatementPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
+  const queryClient = useQueryClient()
+
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
 
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }))
@@ -155,6 +162,7 @@ export default function StatementPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -480,5 +488,6 @@ export default function StatementPage() {
         </>
       )}
     </div>
+    </PullToRefresh>
   )
 }

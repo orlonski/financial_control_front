@@ -1,15 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { 
-  Home, 
-  Wallet, 
-  Tag, 
-  CreditCard, 
-  Receipt, 
-  ArrowLeftRight, 
-  FileText, 
+import {
+  Home,
+  Wallet,
+  Tag,
+  CreditCard,
+  Receipt,
+  ArrowLeftRight,
+  FileText,
   BarChart3,
   Menu,
   X,
@@ -31,13 +31,63 @@ const navigation = [
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
 ]
 
+const SWIPE_THRESHOLD = 80
+const EDGE_WIDTH = 30
+
 export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Swipe gesture state
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const isSwiping = useRef(false)
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    // Only trigger swipe if starting from the left edge
+    if (touch.clientX <= EDGE_WIDTH && !sidebarOpen) {
+      touchStartX.current = touch.clientX
+      touchStartY.current = touch.clientY
+      isSwiping.current = true
+    }
+  }, [sidebarOpen])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isSwiping.current) return
+
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - touchStartX.current
+    const deltaY = touch.clientY - touchStartY.current
+
+    // Cancel if vertical movement is greater than horizontal
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      isSwiping.current = false
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!isSwiping.current) return
+
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - touchStartX.current
+
+    // Open sidebar if swiped right enough
+    if (deltaX >= SWIPE_THRESHOLD) {
+      setSidebarOpen(true)
+    }
+
+    isSwiping.current = false
+  }, [])
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-gray-50"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />

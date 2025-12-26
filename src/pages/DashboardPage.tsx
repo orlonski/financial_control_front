@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { accountsApi, transactionsApi } from '@/services/api'
+import { PullToRefresh } from '@/components/PullToRefresh'
+import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,6 +14,7 @@ import { useMonthNavigation } from '@/hooks/useMonthNavigation'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const {
     selectedYear,
     selectedMonth,
@@ -21,6 +24,10 @@ export default function DashboardPage() {
     goToCurrentMonth,
   } = useMonthNavigation()
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+
+  const handleRefresh = async () => {
+    invalidateTransactionRelated(queryClient)
+  }
 
   const years = getYearsRange(5)
 
@@ -70,6 +77,7 @@ export default function DashboardPage() {
   const isLoading = !summary || initialAccounts.length === 0 || finalAccounts.length === 0
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -321,5 +329,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </PullToRefresh>
   )
 }
