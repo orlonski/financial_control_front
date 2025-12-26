@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, ChevronUp } from 'lucide-react'
 
 interface PullToRefreshProps {
   onRefresh: () => Promise<void> | void
@@ -13,6 +13,7 @@ const MAX_PULL = 120
 export function PullToRefresh({ onRefresh, children, disabled = false }: PullToRefreshProps) {
   const [pullDistance, setPullDistance] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const touchStartY = useRef(0)
   const isPulling = useRef(false)
@@ -91,6 +92,23 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd])
 
+  // Scroll to top button visibility
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      setShowScrollTop(container.scrollTop > 200)
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const progress = Math.min(pullDistance / PULL_THRESHOLD, 1)
   const rotation = progress * 180
 
@@ -130,6 +148,17 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
       >
         {children}
       </div>
+
+      {/* Scroll to top button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-20 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all"
+          aria-label="Voltar ao topo"
+        >
+          <ChevronUp className="h-5 w-5" />
+        </button>
+      )}
     </div>
   )
 }
