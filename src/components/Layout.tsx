@@ -13,7 +13,11 @@ import {
   BarChart3,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Repeat,
+  PiggyBank,
+  Target,
+  Bell
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -26,6 +30,10 @@ const navigation = [
   { name: 'Categorias', href: '/categories', icon: Tag },
   { name: 'Cartões', href: '/credit-cards', icon: CreditCard },
   { name: 'Transações', href: '/transactions', icon: Receipt },
+  { name: 'Recorrentes', href: '/recurring', icon: Repeat },
+  { name: 'Orçamentos', href: '/budgets', icon: PiggyBank },
+  { name: 'Metas', href: '/goals', icon: Target },
+  { name: 'Lembretes', href: '/reminders', icon: Bell },
   { name: 'Transferências', href: '/transfers', icon: ArrowLeftRight },
   { name: 'Extrato', href: '/statement', icon: FileText },
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },

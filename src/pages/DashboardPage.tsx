@@ -11,6 +11,9 @@ import { Wallet, Plus, ArrowLeftRight, FileText } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { MONTHS } from '@/constants/dateOptions'
 import { useMonthNavigation } from '@/hooks/useMonthNavigation'
+import { DashboardReminders } from '@/components/dashboard/DashboardReminders'
+import { DashboardBudgets } from '@/components/dashboard/DashboardBudgets'
+import { DashboardGoals } from '@/components/dashboard/DashboardGoals'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -145,6 +148,14 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Widgets Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DashboardReminders />
+        <DashboardBudgets month={selectedMonth} year={selectedYear} />
+      </div>
+
+      <DashboardGoals />
 
       {/* Quick Actions */}
       <div>

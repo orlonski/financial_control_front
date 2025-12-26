@@ -19,6 +19,10 @@ const EditTransactionPage = lazy(() => import('@/pages/EditTransactionPage'))
 const TransfersPage = lazy(() => import('@/pages/TransfersPage'))
 const StatementPage = lazy(() => import('@/pages/StatementPage'))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
+const BudgetsPage = lazy(() => import('@/pages/BudgetsPage'))
+const GoalsPage = lazy(() => import('@/pages/GoalsPage'))
+const RecurringPage = lazy(() => import('@/pages/RecurringPage'))
+const RemindersPage = lazy(() => import('@/pages/RemindersPage'))
 
 // Loading spinner para Suspense
 const PageLoader = () => (
@@ -68,6 +72,10 @@ function App() {
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/statement" element={<StatementPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/recurring" element={<RecurringPage />} />
+          <Route path="/reminders" element={<RemindersPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
