@@ -175,8 +175,8 @@ export default function AccountsPage() {
           <p className="text-gray-600">Gerencie suas contas bancárias</p>
         </div>
         <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Conta
+          <Plus className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Nova Conta</span>
         </Button>
       </div>
 

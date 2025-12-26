@@ -175,8 +175,8 @@ export default function CategoriesPage() {
           <p className="text-gray-600">Organize suas receitas e despesas por categoria</p>
         </div>
         <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Categoria
+          <Plus className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Nova Categoria</span>
         </Button>
       </div>
 

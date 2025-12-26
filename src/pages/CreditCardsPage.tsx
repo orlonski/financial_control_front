@@ -240,8 +240,8 @@ export default function CreditCardsPage() {
           <p className="text-gray-600">Gerencie seus cartões e faturas</p>
         </div>
         <Button onClick={handleCreate} disabled={accounts.length === 0}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Cartão
+          <Plus className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Novo Cartão</span>
         </Button>
       </div>
 

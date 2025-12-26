@@ -87,8 +87,8 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button onClick={goToCurrentMonth} variant="outline">
-          <Calendar className="h-4 w-4 mr-2" />
-          Mês Atual
+          <Calendar className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Mês Atual</span>
         </Button>
       </div>
 

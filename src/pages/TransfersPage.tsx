@@ -183,8 +183,8 @@ export default function TransfersPage() {
           <p className="text-gray-600">Transfira dinheiro entre suas contas</p>
         </div>
         <Button onClick={handleCreate} disabled={accounts.length < 2}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Transferência
+          <Plus className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Nova Transferência</span>
         </Button>
       </div>
 
