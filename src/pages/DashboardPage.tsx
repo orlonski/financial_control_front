@@ -6,7 +6,8 @@ import { PullToRefresh } from '@/components/PullToRefresh'
 import { MonthFilter } from '@/components/MonthFilter'
 import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Wallet, TrendingUp, TrendingDown, DollarSign, Plus, ArrowLeftRight, FileText } from 'lucide-react'
+import { FinancialSummaryCards } from '@/components/FinancialSummaryCards'
+import { Wallet, Plus, ArrowLeftRight, FileText } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { MONTHS } from '@/constants/dateOptions'
 import { useMonthNavigation } from '@/hooks/useMonthNavigation'
@@ -69,7 +70,6 @@ export default function DashboardPage() {
 
   const totalIncome = summary?.totalIncome || 0
   const totalExpense = summary?.totalExpense || 0
-  const monthlyResult = totalIncome - totalExpense
 
   const isLoading = !summary || initialAccounts.length === 0 || finalAccounts.length === 0
 
@@ -112,99 +112,14 @@ export default function DashboardPage() {
       />
 
       {/* Summary Cards */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 bg-gray-200 rounded w-20"></div>
-                <div className="h-4 w-4 bg-gray-200 rounded"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-16"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Saldo Inicial</CardTitle>
-              <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-base sm:text-2xl font-bold">
-                {formatCurrency(initialBalance)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Fim do mês anterior
-              </p>
-            </CardContent>
-          </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Receitas</CardTitle>
-            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base sm:text-2xl font-bold text-green-600">
-              {formatCurrency(totalIncome)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {MONTHS[selectedMonth - 1].label}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Despesas</CardTitle>
-            <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base sm:text-2xl font-bold text-red-600">
-              {formatCurrency(totalExpense)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {MONTHS[selectedMonth - 1].label}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Resultado</CardTitle>
-            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-base sm:text-2xl font-bold ${monthlyResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(monthlyResult)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Receitas - Despesas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Saldo Final</CardTitle>
-            <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-base sm:text-2xl font-bold ${finalBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              {formatCurrency(finalBalance)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Fim do mês
-            </p>
-          </CardContent>
-        </Card>
-        </div>
-      )}
+      <FinancialSummaryCards
+        initialBalance={initialBalance}
+        finalBalance={finalBalance}
+        totalIncome={totalIncome}
+        totalExpense={totalExpense}
+        monthLabel={MONTHS[selectedMonth - 1].label}
+        isLoading={isLoading}
+      />
 
       {/* Accounts */}
       {!isLoading && !selectedAccountId && (

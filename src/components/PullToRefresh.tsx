@@ -17,15 +17,15 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
   const containerRef = useRef<HTMLDivElement>(null)
   const touchStartY = useRef(0)
   const isPulling = useRef(false)
+  const startedAtTop = useRef(false)
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || isRefreshing) return
 
-    const container = containerRef.current
-    if (!container) return
+    // Check if page is scrolled to top using window.scrollY
+    startedAtTop.current = window.scrollY <= 0
 
-    // Only enable pull-to-refresh when scrolled to top
-    if (container.scrollTop > 0) return
+    if (!startedAtTop.current) return
 
     touchStartY.current = e.touches[0].clientY
     isPulling.current = true
@@ -34,11 +34,8 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isPulling.current || disabled || isRefreshing) return
 
-    const container = containerRef.current
-    if (!container) return
-
-    // Only continue if still at the top
-    if (container.scrollTop > 0) {
+    // If user scrolled down, cancel pull
+    if (window.scrollY > 0) {
       isPulling.current = false
       setPullDistance(0)
       return
@@ -47,12 +44,17 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     const touchCurrentY = e.touches[0].clientY
     const delta = touchCurrentY - touchStartY.current
 
-    if (delta > 0) {
+    // Only activate pull-to-refresh on deliberate pull down
+    if (delta > 10 && startedAtTop.current) {
       // Prevent default scroll when pulling down
       e.preventDefault()
       // Apply resistance to make it feel more natural
       const distance = Math.min(delta * 0.5, MAX_PULL)
       setPullDistance(distance)
+    } else if (delta < 0) {
+      // User is scrolling up, cancel pull and allow normal scroll
+      isPulling.current = false
+      setPullDistance(0)
     }
   }, [disabled, isRefreshing])
 
@@ -60,6 +62,7 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     if (!isPulling.current || disabled || isRefreshing) return
 
     isPulling.current = false
+    startedAtTop.current = false
 
     if (pullDistance >= PULL_THRESHOLD) {
       setIsRefreshing(true)
@@ -92,21 +95,18 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd])
 
-  // Scroll to top button visibility
+  // Scroll to top button visibility - listen to window scroll
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
     const handleScroll = () => {
-      setShowScrollTop(container.scrollTop > 200)
+      setShowScrollTop(window.scrollY > 200)
     }
 
-    container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const scrollToTop = () => {
-    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const progress = Math.min(pullDistance / PULL_THRESHOLD, 1)
@@ -115,7 +115,7 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
   return (
     <div
       ref={containerRef}
-      className="relative h-full overflow-auto"
+      className="relative"
     >
       {/* Pull indicator */}
       <div

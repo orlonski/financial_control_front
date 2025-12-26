@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { reportsApi, accountsApi } from '@/services/api'
+import { reportsApi, accountsApi, transactionsApi } from '@/services/api'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { MonthFilter } from '@/components/MonthFilter'
 import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChevronRight, TrendingUp, TrendingDown, CreditCard, Wallet, Calendar } from 'lucide-react'
+import { FinancialSummaryCards } from '@/components/FinancialSummaryCards'
+import { ChevronRight, CreditCard, Wallet } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatCurrency, toNumber } from '@/lib/utils'
+import { MONTHS } from '@/constants/dateOptions'
 import type { Transaction } from '@/types'
 
 // Tipo para agrupamento de transações
@@ -84,7 +86,11 @@ export default function StatementPage() {
     setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
-  const { data: statement, isLoading } = useQuery({
+  // Calculate dates for historical balances
+  const endOfMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
+  const endOfPreviousMonth = new Date(selectedYear, selectedMonth - 1, 0).toISOString().split('T')[0]
+
+  const { data: statement, isLoading: isLoadingStatement } = useQuery({
     queryKey: ['monthly-statement', selectedYear, selectedMonth, selectedAccountId],
     queryFn: () => reportsApi.getMonthlyStatement(selectedYear, selectedMonth, selectedAccountId || undefined),
   })
@@ -94,33 +100,51 @@ export default function StatementPage() {
     queryFn: accountsApi.getAll,
   })
 
+  // Get initial balance (end of previous month)
+  const { data: initialAccounts = [] } = useQuery({
+    queryKey: ['accounts-initial-balances', endOfPreviousMonth, selectedAccountId],
+    queryFn: () => accountsApi.getAllWithBalances(endOfPreviousMonth, selectedAccountId || undefined),
+  })
+
+  // Get final balance (end of selected month)
+  const { data: finalAccounts = [] } = useQuery({
+    queryKey: ['accounts-final-balances', endOfMonth, selectedAccountId],
+    queryFn: () => accountsApi.getAllWithBalances(endOfMonth, selectedAccountId || undefined),
+  })
+
+  // Get transaction summary (income and expense)
+  const { data: summary } = useQuery({
+    queryKey: ['transaction-summary', selectedYear, selectedMonth, selectedAccountId],
+    queryFn: () => {
+      const startOfMonth = new Date(selectedYear, selectedMonth - 1, 1)
+      const endOfMonthDate = new Date(selectedYear, selectedMonth, 0)
+
+      return transactionsApi.getSummary(
+        startOfMonth.toISOString().split('T')[0],
+        endOfMonthDate.toISOString().split('T')[0],
+        selectedAccountId || undefined
+      )
+    },
+  })
+
+  // Calculate balances
+  const initialBalance = selectedAccountId
+    ? (initialAccounts.find(a => a.id === selectedAccountId)?.balance || 0)
+    : initialAccounts.reduce((sum, account) => sum + account.balance, 0)
+
+  const finalBalance = selectedAccountId
+    ? (finalAccounts.find(a => a.id === selectedAccountId)?.balance || 0)
+    : finalAccounts.reduce((sum, account) => sum + account.balance, 0)
+
+  const totalIncome = summary?.totalIncome || 0
+  const totalExpense = summary?.totalExpense || 0
+
+  const isLoading = isLoadingStatement || !summary || initialAccounts.length === 0 || finalAccounts.length === 0
+
   const goToCurrentMonth = () => {
     setSelectedYear(new Date().getFullYear())
     setSelectedMonth(new Date().getMonth() + 1)
     setSelectedAccountId('')
-  }
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Extrato Mensal</h1>
-          <p className="text-gray-600">Visualize suas movimentações dia a dia</p>
-        </div>
-        <div className="space-y-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -155,53 +179,35 @@ export default function StatementPage() {
         onClearFilters={goToCurrentMonth}
       />
 
+      {/* Summary Cards */}
+      <FinancialSummaryCards
+        initialBalance={initialBalance}
+        finalBalance={finalBalance}
+        totalIncome={totalIncome}
+        totalExpense={totalExpense}
+        monthLabel={MONTHS[selectedMonth - 1].label}
+        isLoading={isLoading}
+      />
+
+      {/* Daily Balances Loading State */}
+      {isLoadingStatement && (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {statement && (
         <>
-          {/* Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Saldo Inicial</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(statement.dailyBalances[0]?.totalBalance)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Saldo Final</CardTitle>
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Variação</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${
-                  (statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance || 0) >=
-                  (statement.dailyBalances[0]?.totalBalance || 0)
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                }`}>
-                  {formatCurrency((statement.dailyBalances[statement.dailyBalances.length - 1]?.totalBalance || 0) -
-                    (statement.dailyBalances[0]?.totalBalance || 0))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Daily Balances */}
           <div className="space-y-4">
             {statement.dailyBalances.map((dayBalance) => {
