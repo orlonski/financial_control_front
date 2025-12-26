@@ -65,22 +65,16 @@ export function PaymentModal({
             />
           </div>
 
-          <div>
-            <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-1">
-              Conta
-            </label>
-            <Select
-              id="accountId"
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-            >
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <Select
+            label="Conta"
+            id="accountId"
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            options={accounts.map((account) => ({
+              value: account.id,
+              label: account.name
+            }))}
+          />
 
           <div className="flex gap-3 pt-4">
             <Button
