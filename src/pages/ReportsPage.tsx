@@ -2,15 +2,15 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { reportsApi } from '@/services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select } from '@/components/ui/input'
-import { BarChart3, PieChart, TrendingUp, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BarChart3, PieChart, TrendingUp, Calendar } from 'lucide-react'
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 import { useState } from 'react'
 import { formatCurrency } from '@/lib/utils'
-import { MONTHS, getYearsRange } from '@/constants/dateOptions'
+import { MONTHS } from '@/constants/dateOptions'
 import { useMonthNavigation } from '@/hooks/useMonthNavigation'
 import { CHART_COLORS } from '@/constants/colors'
 import { PullToRefresh } from '@/components/PullToRefresh'
+import { MonthFilter } from '@/components/MonthFilter'
 import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 
 export default function ReportsPage() {
@@ -28,8 +28,6 @@ export default function ReportsPage() {
   const handleRefresh = async () => {
     invalidateTransactionRelated(queryClient)
   }
-
-  const years = getYearsRange(5)
 
   const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
   const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0]
@@ -80,89 +78,40 @@ export default function ReportsPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
-          <p className="text-gray-600">Analise seus gastos e receitas</p>
-        </div>
-        <Button onClick={goToCurrentMonth} variant="outline">
-          <Calendar className="h-4 w-4 mr-2" />
-          Mês Atual
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
+        <p className="text-gray-600">Analise seus gastos e receitas</p>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateMonth('prev')}
-                aria-label="Mês anterior"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+      <MonthFilter
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        onYearChange={setSelectedYear}
+        onMonthChange={(month) => setSelectedMonth(month as number)}
+        onNavigateMonth={navigateMonth}
+        onClearFilters={goToCurrentMonth}
+      />
 
-              <div className="text-center">
-                <div className="text-sm sm:text-base font-medium text-gray-900">
-                  {MONTHS[selectedMonth - 1].label} de {selectedYear}
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateMonth('next')}
-                aria-label="Próximo mês"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={reportType === 'category' ? 'default' : 'outline'}
-                onClick={() => setReportType('category')}
-                className="w-full"
-              >
-                <PieChart className="h-4 w-4 mr-2" />
-                Por Categoria
-              </Button>
-              <Button
-                variant={reportType === 'cashflow' ? 'default' : 'outline'}
-                onClick={() => setReportType('cashflow')}
-                className="w-full"
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Fluxo de Caixa
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Select
-                label="Mês"
-                options={MONTHS.map(month => ({
-                  value: month.value.toString(),
-                  label: month.label
-                }))}
-                value={selectedMonth.toString()}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              />
-              <Select
-                label="Ano"
-                options={years.map(year => ({
-                  value: year.toString(),
-                  label: year.toString()
-                }))}
-                value={selectedYear.toString()}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              />
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      {/* Report Type Toggle */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant={reportType === 'category' ? 'default' : 'outline'}
+          onClick={() => setReportType('category')}
+          className="w-full"
+        >
+          <PieChart className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Por Categoria</span>
+        </Button>
+        <Button
+          variant={reportType === 'cashflow' ? 'default' : 'outline'}
+          onClick={() => setReportType('cashflow')}
+          className="w-full"
+        >
+          <TrendingUp className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Fluxo de Caixa</span>
+        </Button>
+      </div>
 
       {/* Category Report */}
       {reportType === 'category' && (

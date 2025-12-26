@@ -4,14 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { transactionsApi, accountsApi, categoriesApi, creditCardsApi } from '@/services/api'
 import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 import { PullToRefresh } from '@/components/PullToRefresh'
+import { MonthFilter } from '@/components/MonthFilter'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select } from '@/components/ui/input'
 import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar, CheckCircle2, Circle } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatCurrency } from '@/lib/utils'
-import { MONTHS, getYearsRange } from '@/constants/dateOptions'
 import { useToast } from '@/components/ui/toast'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { PaymentModal } from '@/components/PaymentModal'
@@ -47,8 +46,6 @@ export default function TransactionsPage() {
   const [togglingTransactionId, setTogglingTransactionId] = useState<string | null>(null)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
-
-  const years = getYearsRange(5)
 
   // Build filter params
   const filterParams: TransactionFilterParams = { limit: 100 }
@@ -191,7 +188,8 @@ export default function TransactionsPage() {
     : categories
 
   const clearFilters = () => {
-    setSelectedMonth('')
+    setSelectedMonth(new Date().getMonth() + 1)
+    setSelectedYear(new Date().getFullYear())
     setSelectedType('')
     setSelectedAccountId('')
     setSelectedCategoryId('')
@@ -211,109 +209,88 @@ export default function TransactionsPage() {
         isLoading={togglePaidMutation.isPending}
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transações</h1>
           <p className="text-gray-600">Gerencie suas receitas e despesas</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-2">
           <Button onClick={handleCreate} className="flex-1 sm:flex-none">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Transação
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nova Transação</span>
           </Button>
           <Button onClick={handleCreateInstallment} variant="outline" className="flex-1 sm:flex-none">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Recorrente
+            <CreditCard className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Recorrente</span>
           </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Filtros</CardTitle>
-            <Button onClick={clearFilters} variant="ghost" size="sm">
-              Limpar
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <Select
-              label="Mês"
-              options={[
-                { value: '', label: 'Todos os meses' },
-                ...MONTHS.map(month => ({
-                  value: month.value.toString(),
-                  label: month.label
-                }))
-              ]}
-              value={selectedMonth.toString()}
-              onChange={(e) => setSelectedMonth(e.target.value === '' ? '' : parseInt(e.target.value))}
-            />
-            <Select
-              label="Ano"
-              options={years.map(year => ({
-                value: year.toString(),
-                label: year.toString()
-              }))}
-              value={selectedYear.toString()}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            />
-            <Select
-              label="Tipo"
-              options={[
-                { value: '', label: 'Todos' },
-                { value: 'INCOME', label: 'Receita' },
-                { value: 'EXPENSE', label: 'Despesa' }
-              ]}
-              value={selectedType}
-              onChange={(e) => {
-                setSelectedType(e.target.value as 'INCOME' | 'EXPENSE' | '')
-                setSelectedCategoryId('') // Reset category when type changes
-              }}
-            />
-            <Select
-              label="Conta"
-              options={[
-                { value: '', label: 'Todas as contas' },
-                ...accounts.map(account => ({
-                  value: account.id,
-                  label: account.name
-                }))
-              ]}
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-            />
-            <Select
-              label="Categoria"
-              options={[
-                { value: '', label: 'Todas as categorias' },
-                ...filteredCategories.map(category => ({
-                  value: category.id,
-                  label: category.name
-                }))
-              ]}
-              value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              disabled={!selectedType}
-            />
-            <Select
-              label="Cartão de Crédito"
-              options={[
-                { value: '', label: 'Todos os cartões' },
-                ...creditCards.map(card => ({
-                  value: card.id,
-                  label: card.name
-                }))
-              ]}
-              value={selectedCreditCardId}
-              onChange={(e) => setSelectedCreditCardId(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <MonthFilter
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        onYearChange={setSelectedYear}
+        onMonthChange={setSelectedMonth}
+        showAllMonthsOption={true}
+        additionalFilters={[
+          {
+            key: 'type',
+            label: 'Tipo',
+            options: [
+              { value: '', label: 'Todos' },
+              { value: 'INCOME', label: 'Receita' },
+              { value: 'EXPENSE', label: 'Despesa' }
+            ],
+            value: selectedType,
+            onChange: (value) => {
+              setSelectedType(value as 'INCOME' | 'EXPENSE' | '')
+              setSelectedCategoryId('')
+            },
+          },
+          {
+            key: 'account',
+            label: 'Conta',
+            options: [
+              { value: '', label: 'Todas as contas' },
+              ...accounts.map(account => ({
+                value: account.id,
+                label: account.name
+              }))
+            ],
+            value: selectedAccountId,
+            onChange: setSelectedAccountId,
+          },
+          {
+            key: 'category',
+            label: 'Categoria',
+            options: [
+              { value: '', label: 'Todas as categorias' },
+              ...filteredCategories.map(category => ({
+                value: category.id,
+                label: category.name
+              }))
+            ],
+            value: selectedCategoryId,
+            onChange: setSelectedCategoryId,
+            disabled: !selectedType,
+          },
+          {
+            key: 'creditCard',
+            label: 'Cartão',
+            options: [
+              { value: '', label: 'Todos os cartões' },
+              ...creditCards.map(card => ({
+                value: card.id,
+                label: card.name
+              }))
+            ],
+            value: selectedCreditCardId,
+            onChange: setSelectedCreditCardId,
+          }
+        ]}
+        onClearFilters={clearFilters}
+      />
 
       {transactions.length === 0 ? (
         <Card>

@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { reportsApi, accountsApi } from '@/services/api'
 import { PullToRefresh } from '@/components/PullToRefresh'
+import { MonthFilter } from '@/components/MonthFilter'
 import { invalidateTransactionRelated } from '@/lib/queryInvalidation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Select } from '@/components/ui/input'
-import { ChevronLeft, ChevronRight, Calendar, TrendingUp, TrendingDown, CreditCard, Wallet } from 'lucide-react'
+import { ChevronRight, TrendingUp, TrendingDown, CreditCard, Wallet, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatCurrency, toNumber } from '@/lib/utils'
@@ -95,47 +94,10 @@ export default function StatementPage() {
     queryFn: accountsApi.getAll,
   })
 
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const currentMonth = currentDate.getMonth() + 1
-
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-  const months = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' },
-  ]
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      if (selectedMonth === 1) {
-        setSelectedMonth(12)
-        setSelectedYear(selectedYear - 1)
-      } else {
-        setSelectedMonth(selectedMonth - 1)
-      }
-    } else {
-      if (selectedMonth === 12) {
-        setSelectedMonth(1)
-        setSelectedYear(selectedYear + 1)
-      } else {
-        setSelectedMonth(selectedMonth + 1)
-      }
-    }
-  }
-
   const goToCurrentMonth = () => {
-    setSelectedYear(currentYear)
-    setSelectedMonth(currentMonth)
+    setSelectedYear(new Date().getFullYear())
+    setSelectedMonth(new Date().getMonth() + 1)
+    setSelectedAccountId('')
   }
 
   if (isLoading) {
@@ -164,80 +126,34 @@ export default function StatementPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Extrato Mensal</h1>
-          <p className="text-gray-600">Visualize suas movimentações dia a dia</p>
-        </div>
-        <Button onClick={goToCurrentMonth} variant="outline">
-          <Calendar className="h-4 w-4 mr-2" />
-          Mês Atual
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Extrato Mensal</h1>
+        <p className="text-gray-600">Visualize suas movimentações dia a dia</p>
       </div>
 
-      {/* Month Navigation */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateMonth('prev')}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              <div className="text-center">
-                <div className="text-sm sm:text-base font-medium text-gray-900">
-                  {months[selectedMonth - 1].label} de {selectedYear}
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateMonth('next')}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <Select
-                label="Mês"
-                options={months.map(month => ({
-                  value: month.value.toString(),
-                  label: month.label
-                }))}
-                value={selectedMonth.toString()}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              />
-              <Select
-                label="Ano"
-                options={years.map(year => ({
-                  value: year.toString(),
-                  label: year.toString()
-                }))}
-                value={selectedYear.toString()}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              />
-              <Select
-                label="Conta"
-                options={[
-                  { value: '', label: 'Todas as contas' },
-                  ...accounts.map(account => ({
-                    value: account.id,
-                    label: account.name
-                  }))
-                ]}
-                value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      {/* Filters */}
+      <MonthFilter
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        onYearChange={setSelectedYear}
+        onMonthChange={(month) => setSelectedMonth(month as number)}
+        additionalFilters={[
+          {
+            key: 'account',
+            label: 'Conta',
+            options: [
+              { value: '', label: 'Todas as contas' },
+              ...accounts.map(account => ({
+                value: account.id,
+                label: account.name
+              }))
+            ],
+            value: selectedAccountId,
+            onChange: setSelectedAccountId,
+          }
+        ]}
+        onClearFilters={goToCurrentMonth}
+      />
 
       {statement && (
         <>
