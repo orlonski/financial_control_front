@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { transactionsApi, accountsApi, categoriesApi, creditCardsApi } from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input, Select, Textarea } from '@/components/ui/input'
+import { Input, SearchableSelect, Textarea } from '@/components/ui/input'
 import { ArrowLeft } from 'lucide-react'
 
 const transactionSchema = z.object({
@@ -141,27 +141,31 @@ export default function NewTransactionPage() {
               error={errors.description?.message}
             />
 
-            <Select
+            <SearchableSelect
               label="Conta"
               options={accounts.map(account => ({
                 value: account.id,
                 label: account.name
               }))}
-              {...register('accountId')}
+              value={watch('accountId')}
+              onChange={(value) => setValue('accountId', value)}
+              placeholder="Selecione uma conta"
               error={errors.accountId?.message}
             />
 
-            <Select
+            <SearchableSelect
               label="Categoria"
               options={filteredCategories.map(category => ({
                 value: category.id,
                 label: category.name
               }))}
-              {...register('categoryId')}
+              value={watch('categoryId')}
+              onChange={(value) => setValue('categoryId', value)}
+              placeholder="Selecione uma categoria"
               error={errors.categoryId?.message}
             />
 
-            <Select
+            <SearchableSelect
               label="Cartão de Crédito (opcional)"
               options={[
                 { value: '', label: 'Não usar cartão' },
@@ -170,7 +174,9 @@ export default function NewTransactionPage() {
                   label: card.name
                 }))
               ]}
-              {...register('creditCardId')}
+              value={watch('creditCardId') || ''}
+              onChange={(value) => setValue('creditCardId', value)}
+              placeholder="Selecione um cartão"
               error={errors.creditCardId?.message}
             />
 
