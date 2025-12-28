@@ -1,0 +1,45 @@
+name: Auto Dev - Claude Code
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  planner:
+    if: github.event.label.name == 'auto-dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run Planner
+        run: |
+          ssh -o StrictHostKeyChecking=no claude-automation@${{ secrets.SERVER_HOST }} "source ~/crewai-env/bin/activate && cd ~/agents && nohup python planner.py '${{ github.repository }}' '${{ github.event.issue.number }}' '${{ github.event.issue.title }}' '${{ github.event.issue.body }}' > ~/logs/frontend/planner_${{ github.event.issue.number }}.log 2>&1 &"
+
+  executor:
+    if: |
+      github.event_name == 'issue_comment' &&
+      contains(github.event.issue.labels.*.name, 'aguardando-aprovacao') &&
+      contains(github.event.comment.body, 'aprovado')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run Executor
+        run: |
+          ssh -o StrictHostKeyChecking=no claude-automation@${{ secrets.SERVER_HOST }} "source ~/crewai-env/bin/activate && cd ~/agents && nohup python executor.py '${{ github.repository }}' '${{ github.event.issue.number }}' '${{ github.event.issue.title }}' '${{ github.event.issue.body }}' > ~/logs/frontend/executor_${{ github.event.issue.number }}.log 2>&1 &"
