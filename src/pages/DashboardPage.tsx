@@ -136,7 +136,7 @@ export default function DashboardPage() {
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">
+                  <div className={`text-xl sm:text-2xl font-bold ${account.balance > 0 ? 'text-green-600' : account.balance < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                     {formatCurrency(account.balance)}
                   </div>
                   <p className="text-xs text-muted-foreground capitalize">
