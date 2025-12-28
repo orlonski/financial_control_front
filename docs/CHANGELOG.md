@@ -6,4 +6,5 @@ Historico de implementacoes automaticas.
 
 | Issue | Titulo | Status |
 |-------|--------|--------|
+| #1 | Criar componente de loading spinner | ✅ |
 | - | Inicio do changelog | OK |
