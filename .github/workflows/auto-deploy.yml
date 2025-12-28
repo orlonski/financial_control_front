@@ -17,6 +17,5 @@ jobs:
       - name: Wait for deployment
         run: sleep 30
         
-      - name: Health Check
-        run: |
-          echo "Deploy iniciado!"
+      - name: Deploy Complete
+        run: echo "Deploy do frontend concluido!"
