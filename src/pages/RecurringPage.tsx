@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Edit, Trash2, Repeat, Pause, Play, RefreshCw, Calendar } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 const formatCurrency = (value: number) => {
@@ -209,7 +209,7 @@ export default function RecurringPage() {
                         </span>
                         {recurring.nextDueDate && (
                           <span className="text-sm text-gray-500">
-                            Próximo: {format(new Date(recurring.nextDueDate), "d 'de' MMM", { locale: ptBR })}
+                            Próximo: {format(parseISO(recurring.nextDueDate), "d 'de' MMM", { locale: ptBR })}
                           </span>
                         )}
                       </div>
