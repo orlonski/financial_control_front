@@ -200,7 +200,7 @@ export default function CategoriesPage() {
         <div className="space-y-8">
           {/* Income Categories */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-lg font-semibold text-green-600 mb-4">
               Categorias de Receita ({incomeCategories.length})
             </h2>
             {incomeCategories.length === 0 ? (
@@ -254,7 +254,7 @@ export default function CategoriesPage() {
 
           {/* Expense Categories */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-lg font-semibold text-red-600 mb-4">
               Categorias de Despesa ({expenseCategories.length})
             </h2>
             {expenseCategories.length === 0 ? (
