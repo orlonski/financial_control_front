@@ -105,10 +105,10 @@ export function FinancialSummaryCards({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-xs sm:text-sm font-medium">Saldo Final</CardTitle>
-          <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+          <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
         </CardHeader>
         <CardContent>
-          <div className={`text-base sm:text-2xl font-bold ${finalBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+          <div className={`text-base sm:text-2xl font-bold ${finalBalance > 0 ? 'text-green-600' : finalBalance < 0 ? 'text-red-600' : 'text-gray-500'}`}>
             {formatCurrency(finalBalance)}
           </div>
           <p className="text-xs text-muted-foreground">

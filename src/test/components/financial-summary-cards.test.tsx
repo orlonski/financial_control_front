@@ -136,7 +136,7 @@ describe('FinancialSummaryCards', () => {
   })
 
   describe('Final Balance Color', () => {
-    it('should display positive final balance in blue', () => {
+    it('should display positive final balance in green', () => {
       render(
         <FinancialSummaryCards
           {...defaultProps}
@@ -147,7 +147,9 @@ describe('FinancialSummaryCards', () => {
       const finalBalanceCard = screen.getByText('Saldo Final').closest('div')?.parentElement
       const balanceValue = finalBalanceCard?.querySelector('.font-bold')
 
-      expect(balanceValue).toHaveClass('text-blue-600')
+      expect(balanceValue).toHaveClass('text-green-600')
+      expect(balanceValue).not.toHaveClass('text-red-600')
+      expect(balanceValue).not.toHaveClass('text-gray-500')
     })
 
     it('should display negative final balance in red', () => {
@@ -162,9 +164,11 @@ describe('FinancialSummaryCards', () => {
       const balanceValue = finalBalanceCard?.querySelector('.font-bold')
 
       expect(balanceValue).toHaveClass('text-red-600')
+      expect(balanceValue).not.toHaveClass('text-green-600')
+      expect(balanceValue).not.toHaveClass('text-gray-500')
     })
 
-    it('should display zero final balance in blue', () => {
+    it('should display zero final balance in gray', () => {
       render(
         <FinancialSummaryCards
           {...defaultProps}
@@ -175,7 +179,9 @@ describe('FinancialSummaryCards', () => {
       const finalBalanceCard = screen.getByText('Saldo Final').closest('div')?.parentElement
       const balanceValue = finalBalanceCard?.querySelector('.font-bold')
 
-      expect(balanceValue).toHaveClass('text-blue-600')
+      expect(balanceValue).toHaveClass('text-gray-500')
+      expect(balanceValue).not.toHaveClass('text-green-600')
+      expect(balanceValue).not.toHaveClass('text-red-600')
     })
   })
 })
