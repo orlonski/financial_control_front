@@ -48,7 +48,7 @@ export function FinancialSummaryCards({
           <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-base sm:text-2xl font-bold">
+          <div className={`text-base sm:text-2xl font-bold ${initialBalance > 0 ? 'text-green-600' : initialBalance < 0 ? 'text-red-600' : 'text-gray-500'}`}>
             {formatCurrency(initialBalance)}
           </div>
           <p className="text-xs text-muted-foreground">
