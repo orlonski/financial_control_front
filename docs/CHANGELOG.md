@@ -6,6 +6,7 @@ Historico de implementacoes automaticas.
 
 | Issue | Titulo | Status |
 |-------|--------|--------|
+| #12 | Ajustar tela de Categorias | ✅ |
 | #10 | Ajuste na tela Dashboard | ✅ |
 | #8 | Ajustes na tela Dashboard | ✅ |
 | #6 | tela de transações recorrentes | ✅ |
