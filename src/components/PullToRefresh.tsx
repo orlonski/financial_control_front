@@ -153,7 +153,7 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-20 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all"
+          className="fixed bottom-6 left-6 z-30 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition-all"
           aria-label="Voltar ao topo"
         >
           <ChevronUp className="h-5 w-5" />

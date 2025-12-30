@@ -14,6 +14,7 @@ import { useMonthNavigation } from '@/hooks/useMonthNavigation'
 import { DashboardReminders } from '@/components/dashboard/DashboardReminders'
 import { DashboardBudgets } from '@/components/dashboard/DashboardBudgets'
 import { DashboardGoals } from '@/components/dashboard/DashboardGoals'
+import { FloatingActionMenu } from '@/components/FloatingActionMenu'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -208,6 +209,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    <FloatingActionMenu />
     </PullToRefresh>
   )
 }
