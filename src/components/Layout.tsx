@@ -21,6 +21,7 @@ import {
   Target,
   Bell
 } from 'lucide-react'
+import { BottomNavigationBar } from '@/components/BottomNavigationBar'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -254,13 +255,16 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Page content */}
         <main className="flex-1">
-          <div className="py-6">
+          <div className="py-6 pb-24 lg:pb-6">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               {children}
             </div>
           </div>
         </main>
       </div>
+
+      {/* Bottom Navigation Bar - Mobile only */}
+      <BottomNavigationBar />
     </div>
   )
 }
