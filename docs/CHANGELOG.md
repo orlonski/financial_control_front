@@ -6,6 +6,7 @@ Historico de implementacoes automaticas.
 
 | Issue | Titulo | Status |
 |-------|--------|--------|
+| #16 | ajustes no botão flutuante | ✅ |
 | #14 | Adicionar botão de atalho menu flutuante | ✅ |
 | #12 | Ajustar tela de Categorias | ✅ |
 | #10 | Ajuste na tela Dashboard | ✅ |
