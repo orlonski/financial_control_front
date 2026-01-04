@@ -10,6 +10,10 @@ export default defineConfig({
       "@": fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  define: {
+    'process.env.NODE_ENV': '"test"',
+  },
+  mode: 'development',
   test: {
     globals: true,
     environment: 'jsdom',
