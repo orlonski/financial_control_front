@@ -180,7 +180,7 @@ export default function Layout({ children }: LayoutProps) {
               onClick={logout}
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Sair
+              Logout
             </Button>
           </div>
         </div>
@@ -232,7 +232,7 @@ export default function Layout({ children }: LayoutProps) {
               onClick={logout}
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Sair
+              Logout
             </Button>
           </div>
         </div>
