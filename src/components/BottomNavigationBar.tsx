@@ -13,7 +13,7 @@ const navItems: NavItem[] = [
   {
     icon: <Home className="h-5 w-5" />,
     activeIcon: <Home className="h-5 w-5 fill-current" />,
-    label: 'Home',
+    label: 'Início',
     path: '/dashboard',
   },
   {
