@@ -387,44 +387,44 @@ export default function TransactionsPage() {
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className={`text-xl sm:text-2xl font-bold ${
-                    transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                  }`} data-testid="transaction-amount">
-                    {transaction.type === 'INCOME' ? '+' : '-'}
-                    {formatCurrency(transaction.amount)}
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-3 text-sm">
-                    {transaction.purchaseDate && (
-                      <div 
-                        className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded"
-                        data-testid="purchase-date"
-                      >
-                        <ShoppingBag className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                        <span className="text-xs sm:text-sm">
-                          Compra: {format(new Date(transaction.purchaseDate), 'dd/MM/yyyy', { locale: ptBR })}
-                        </span>
-                      </div>
-                    )}
+                <div className={`text-xl sm:text-2xl font-bold ${
+                  transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                }`} data-testid="transaction-amount">
+                  {transaction.type === 'INCOME' ? '+' : '-'}
+                  {formatCurrency(transaction.amount)}
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2 mt-2 text-xs sm:text-sm">
+                  {(transaction.purchaseDate || transaction.creditCard) && (
                     <div 
-                      className="flex items-center text-gray-600"
-                      data-testid="transaction-date"
+                      className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                      data-testid="purchase-date"
                     >
-                      <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                      <span className="text-xs sm:text-sm">
-                        {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
+                      <ShoppingBag className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                      <span>
+                        {transaction.purchaseDate 
+                          ? format(new Date(transaction.purchaseDate), 'dd/MM/yyyy', { locale: ptBR })
+                          : format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
                       </span>
                     </div>
-                    {transaction.installmentNumber && transaction.totalInstallments && (
-                      <span 
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        data-testid="installment-info"
-                      >
-                        {transaction.installmentNumber}/{transaction.totalInstallments}
-                      </span>
-                    )}
+                  )}
+                  <div 
+                    className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                    data-testid="transaction-date"
+                  >
+                    <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                    <span>
+                      {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
+                    </span>
                   </div>
+                  {transaction.installmentNumber && transaction.totalInstallments && (
+                    <span 
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      data-testid="installment-info"
+                    >
+                      {transaction.installmentNumber}/{transaction.totalInstallments}
+                    </span>
+                  )}
                 </div>
                 
                 {transaction.notes && (

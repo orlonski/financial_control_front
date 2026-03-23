@@ -107,6 +107,17 @@ const mockTransactions = [
     category: { id: '3', name: 'Transporte', type: 'EXPENSE' },
     notes: 'Tanque cheio',
   },
+  {
+    id: '4',
+    type: 'EXPENSE',
+    amount: 299.99,
+    description: 'Smartphone',
+    date: '2024-01-25',
+    paid: false,
+    account: { id: '1', name: 'Conta Corrente', type: 'CHECKING' },
+    category: { id: '4', name: 'Eletrônicos', type: 'EXPENSE' },
+    creditCard: { id: '2', name: 'Cartão Mastercard' },
+  },
 ]
 
 const mockAccounts = [
@@ -177,7 +188,7 @@ describe('Transactions List - Visual and Functional Tests', () => {
       renderWithProviders(<TransactionsPage />)
 
       const cards = screen.getAllByTestId('transaction-card')
-      expect(cards).toHaveLength(3)
+      expect(cards).toHaveLength(4)
     })
 
     it('should display transaction description', () => {
@@ -222,19 +233,68 @@ describe('Transactions List - Visual and Functional Tests', () => {
     it('should display purchase date when available', () => {
       renderWithProviders(<TransactionsPage />)
 
-      const purchaseDateElement = screen.getByTestId('purchase-date')
-      expect(purchaseDateElement).toBeInTheDocument()
-      expect(purchaseDateElement).toHaveTextContent('Compra:')
+      const purchaseDateElements = screen.getAllByTestId('purchase-date')
+      expect(purchaseDateElements.length).toBeGreaterThanOrEqual(1)
+      expect(purchaseDateElements[0]).toHaveTextContent('14/01/2024')
+    })
+
+    it('should display purchase date badge for credit card transactions without explicit purchaseDate', () => {
+      renderWithProviders(<TransactionsPage />)
+
+      const purchaseDateElements = screen.getAllByTestId('purchase-date')
+      expect(purchaseDateElements.length).toBe(2)
+      const purchaseDateTexts = purchaseDateElements.map(el => el.textContent)
+      expect(purchaseDateTexts.some(text => text?.includes('25/01/2024'))).toBe(true)
+    })
+
+    it('should show purchase date when creditCard exists even without purchaseDate field', () => {
+      const transactionWithCreditCardOnly = [
+        {
+          id: '5',
+          type: 'EXPENSE' as const,
+          amount: 50.00,
+          description: 'Restaurante',
+          date: '2024-01-28',
+          paid: false,
+          account: { id: '1', name: 'Conta Corrente', type: 'CHECKING' as const },
+          category: { id: '5', name: 'Alimentação', type: 'EXPENSE' as const },
+          creditCard: { id: '1', name: 'Cartão Visa' },
+        },
+      ]
+
+      mockUseQuery.mockImplementation(({ queryKey }: { queryKey: string[] }) => {
+        if (queryKey[0] === 'transactions') {
+          return { data: transactionWithCreditCardOnly, isLoading: false }
+        }
+        if (queryKey[0] === 'accounts') {
+          return { data: mockAccounts, isLoading: false }
+        }
+        if (queryKey[0] === 'categories') {
+          return { data: mockCategories, isLoading: false }
+        }
+        if (queryKey[0] === 'credit-cards') {
+          return { data: mockCreditCards, isLoading: false }
+        }
+        return { data: [], isLoading: false }
+      })
+
+      renderWithProviders(<TransactionsPage />)
+
+      const purchaseDateElements = screen.getAllByTestId('purchase-date')
+      expect(purchaseDateElements.length).toBe(1)
+      const purchaseDateTexts = purchaseDateElements.map(el => el.textContent)
+      expect(purchaseDateTexts.some(text => text?.includes('28/01/2024'))).toBe(true)
     })
 
     it('should display transaction dates correctly formatted', () => {
       renderWithProviders(<TransactionsPage />)
 
       const dates = screen.getAllByTestId('transaction-date')
-      expect(dates).toHaveLength(3)
+      expect(dates).toHaveLength(4)
       expect(dates[0]).toHaveTextContent('15/01/2024')
       expect(dates[1]).toHaveTextContent('05/01/2024')
       expect(dates[2]).toHaveTextContent('20/01/2024')
+      expect(dates[3]).toHaveTextContent('25/01/2024')
     })
 
     it('should display installment information when present', () => {
@@ -257,21 +317,21 @@ describe('Transactions List - Visual and Functional Tests', () => {
       renderWithProviders(<TransactionsPage />)
 
       const editButtons = screen.getAllByTestId('edit-button')
-      expect(editButtons).toHaveLength(3)
+      expect(editButtons).toHaveLength(4)
     })
 
     it('should render delete button for each transaction', () => {
       renderWithProviders(<TransactionsPage />)
 
       const deleteButtons = screen.getAllByTestId('delete-button')
-      expect(deleteButtons).toHaveLength(3)
+      expect(deleteButtons).toHaveLength(4)
     })
 
     it('should render toggle paid button for each transaction', () => {
       renderWithProviders(<TransactionsPage />)
 
       const toggleButtons = screen.getAllByTestId('toggle-paid-button')
-      expect(toggleButtons).toHaveLength(3)
+      expect(toggleButtons).toHaveLength(4)
     })
 
     it('should navigate to edit page when edit button is clicked', async () => {
@@ -352,7 +412,7 @@ describe('Transactions List - Visual and Functional Tests', () => {
       renderWithProviders(<TransactionsPage />)
 
       const redDots = document.querySelectorAll('.bg-red-500')
-      expect(redDots.length).toBe(2)
+      expect(redDots.length).toBe(3)
     })
   })
 })
