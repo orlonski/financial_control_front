@@ -7,7 +7,7 @@ import { PullToRefresh } from '@/components/PullToRefresh'
 import { MonthFilter } from '@/components/MonthFilter'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar, CheckCircle2, Circle } from 'lucide-react'
+import { Plus, Edit, Trash2, Receipt, CreditCard, Calendar, CheckCircle2, Circle, ShoppingBag } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatCurrency } from '@/lib/utils'
@@ -311,99 +311,128 @@ export default function TransactionsPage() {
       ) : (
         <div className="space-y-4">
           {transactions.map((transaction) => (
-            <Card key={transaction.id} className={`relative ${
-              transaction.paid ? 'opacity-60' : ''
-            }`}>
-              <CardHeader className="pb-3">
-                <div className="flex flex-col space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start space-x-3 min-w-0 flex-1">
-                      <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
-                        transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
-                      }`} />
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base sm:text-lg break-words">{transaction.description}</CardTitle>
-                        <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs sm:text-sm mt-1">
-                          <span className="truncate">{transaction.category.name}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="truncate">{transaction.account.name}</span>
-                          {transaction.creditCard && (
-                            <>
-                              <span className="hidden sm:inline">•</span>
-                              <span className="flex items-center truncate">
-                                <CreditCard className="h-3 w-3 mr-1 flex-shrink-0" />
-                                {transaction.creditCard.name}
-                              </span>
-                            </>
-                          )}
-                        </CardDescription>
+            <Card 
+              key={transaction.id} 
+              className={`transition-opacity ${
+                transaction.paid ? 'opacity-70' : ''
+              } hover:shadow-md`}
+              data-testid="transaction-card"
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start space-x-3 min-w-0 flex-1">
+                    <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
+                      transaction.type === 'INCOME' ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base sm:text-lg break-words leading-tight">
+                        {transaction.description}
+                      </CardTitle>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs sm:text-sm text-gray-600">
+                        <span className="font-medium">{transaction.category.name}</span>
+                        <span className="text-gray-400">•</span>
+                        <span>{transaction.account.name}</span>
+                        {transaction.creditCard && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className="flex items-center">
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              {transaction.creditCard.name}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-start space-x-1 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleTogglePaid(transaction)}
-                        disabled={togglingTransactionId === transaction.id}
-                        aria-label={transaction.paid ? 'Marcar como não pago' : 'Marcar como pago'}
-                      >
-                        {togglingTransactionId === transaction.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
-                        ) : transaction.paid ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Circle className="h-4 w-4 text-gray-400" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleEdit(transaction)}
-                        aria-label="Editar transação"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleDelete(transaction.id)}
-                        aria-label="Excluir transação"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className={`text-lg sm:text-xl font-bold ${
-                      transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'INCOME' ? '+' : '-'}
-                      {formatCurrency(transaction.amount)}
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-500 flex items-center">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
-                    </div>
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleTogglePaid(transaction)}
+                      disabled={togglingTransactionId === transaction.id}
+                      aria-label={transaction.paid ? 'Marcar como não pago' : 'Marcar como pago'}
+                      data-testid="toggle-paid-button"
+                    >
+                      {togglingTransactionId === transaction.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+                      ) : transaction.paid ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-gray-400" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleEdit(transaction)}
+                      aria-label="Editar transação"
+                      data-testid="edit-button"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleDelete(transaction.id)}
+                      aria-label="Excluir transação"
+                      data-testid="delete-button"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
-
-                {transaction.installmentNumber && transaction.totalInstallments && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Parcela {transaction.installmentNumber}/{transaction.totalInstallments}
-                    </span>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className={`text-xl sm:text-2xl font-bold ${
+                    transaction.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                  }`} data-testid="transaction-amount">
+                    {transaction.type === 'INCOME' ? '+' : '-'}
+                    {formatCurrency(transaction.amount)}
                   </div>
-                )}
+                  
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    {transaction.purchaseDate && (
+                      <div 
+                        className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                        data-testid="purchase-date"
+                      >
+                        <ShoppingBag className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                        <span className="text-xs sm:text-sm">
+                          Compra: {format(new Date(transaction.purchaseDate), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                      </div>
+                    )}
+                    <div 
+                      className="flex items-center text-gray-600"
+                      data-testid="transaction-date"
+                    >
+                      <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                      <span className="text-xs sm:text-sm">
+                        {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
+                      </span>
+                    </div>
+                    {transaction.installmentNumber && transaction.totalInstallments && (
+                      <span 
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        data-testid="installment-info"
+                      >
+                        {transaction.installmentNumber}/{transaction.totalInstallments}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
                 {transaction.notes && (
-                  <div className="mt-2 text-sm text-gray-600 break-words">
+                  <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600 break-words" data-testid="transaction-notes">
                     {transaction.notes}
                   </div>
                 )}
-              </CardHeader>
+              </CardContent>
             </Card>
           ))}
         </div>
