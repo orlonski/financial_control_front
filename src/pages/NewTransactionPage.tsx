@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -42,6 +43,8 @@ export default function NewTransactionPage() {
     queryFn: creditCardsApi.getAll,
   })
 
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
   const createMutation = useMutation({
     mutationFn: transactionsApi.create,
     onSuccess: () => {
@@ -53,6 +56,9 @@ export default function NewTransactionPage() {
       queryClient.invalidateQueries({ queryKey: ['category-report'] })
       queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
       navigate('/transactions')
+    },
+    onError: (error: Error) => {
+      setSubmitError(error.message || 'Erro ao criar transação')
     },
   })
 
@@ -67,6 +73,7 @@ export default function NewTransactionPage() {
     defaultValues: {
       type: 'EXPENSE',
       date: new Date().toISOString().split('T')[0],
+      purchaseDate: new Date().toISOString().split('T')[0],
     },
   })
 
@@ -195,6 +202,14 @@ export default function NewTransactionPage() {
               {...register('notes')}
               error={errors.notes?.message}
             />
+
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-600" role="alert">
+                  {submitError}
+                </p>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
