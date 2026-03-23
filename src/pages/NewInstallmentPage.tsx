@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -43,6 +44,8 @@ export default function NewInstallmentPage() {
     queryFn: creditCardsApi.getAll,
   })
 
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
   const createInstallmentMutation = useMutation({
     mutationFn: transactionsApi.createInstallments,
     onSuccess: () => {
@@ -54,6 +57,9 @@ export default function NewInstallmentPage() {
       queryClient.invalidateQueries({ queryKey: ['category-report'] })
       queryClient.invalidateQueries({ queryKey: ['cashflow-report'] })
       navigate('/transactions')
+    },
+    onError: (error: Error) => {
+      setSubmitError(error.message || 'Erro ao criar transação recorrente')
     },
   })
 
@@ -215,6 +221,14 @@ export default function NewInstallmentPage() {
               {...register('notes')}
               error={errors.notes?.message}
             />
+
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-600" role="alert">
+                  {submitError}
+                </p>
+              </div>
+            )}
 
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <div className="flex items-start space-x-2">
