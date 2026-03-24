@@ -229,6 +229,11 @@ export const transactionsApi = {
     return response.data
   },
 
+  markAsPaid: async (id: string, paidAt?: string, accountId?: string): Promise<Transaction> => {
+    const response = await api.patch(`/transactions/${id}/paid`, { paid: true, paidAt, accountId })
+    return response.data
+  },
+
   getSummary: async (startDate: string, endDate: string, accountId?: string): Promise<TransactionSummary> => {
     const response = await api.get('/transactions/summary/period', {
       params: { startDate, endDate, accountId }

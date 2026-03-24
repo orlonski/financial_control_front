@@ -30,7 +30,7 @@ vi.mock('@/components/PaymentModal', () => ({
   PaymentModal: () => null,
 }))
 
-vi.mock('@/components/TransactionCard', () => ({
+vi.mock('@/components/TransactionCard/TransactionCard.jsx', () => ({
   TransactionCard: ({ transaction, onTogglePaid, onEdit, onDelete, isToggling }: {
     transaction: { id: string }
     onTogglePaid: () => void
