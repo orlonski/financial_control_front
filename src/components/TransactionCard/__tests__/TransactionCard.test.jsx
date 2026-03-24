@@ -248,7 +248,7 @@ describe('TransactionCard', () => {
       expect(mockOnDelete).toHaveBeenCalledWith('1')
     })
 
-    it('should show loading state when isToggles is true', () => {
+    it('should show loading state when isToggling is true', () => {
       render(
         <TransactionCard
           transaction={mockTransaction}
@@ -334,7 +334,7 @@ describe('TransactionCard', () => {
       )
 
       const card = screen.getByTestId('transaction-card')
-      expect(card.className).toContain('paid')
+      expect(card.className).toContain('opacity-75')
     })
 
     it('should not show paid state styling for unpaid transactions', () => {
@@ -348,7 +348,7 @@ describe('TransactionCard', () => {
       )
 
       const card = screen.getByTestId('transaction-card')
-      expect(card.className).not.toContain('paid')
+      expect(card.className).not.toContain('opacity-75')
     })
   })
 })

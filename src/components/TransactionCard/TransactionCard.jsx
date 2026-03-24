@@ -1,9 +1,7 @@
 import PropTypes from 'prop-types'
 import { format, parseISO } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Check, Pencil, Trash2, CreditCard, Building2, ShoppingCart, Calendar, Tag } from 'lucide-react'
+import { Check, Pencil, Trash2, CreditCard, Landmark, ShoppingCart, Calendar, Tag } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import styles from './TransactionCard.module.scss'
 
 const monthShortFormatter = new Intl.DateTimeFormat('pt-BR', {
   month: 'short',
@@ -49,117 +47,143 @@ export function TransactionCard({
     {
       label: 'CATEGORIA',
       value: transaction.category?.name,
-      icon: <Tag size={12} />,
+      icon: <Tag className="w-3 h-3" />,
       show: true,
     },
     {
       label: 'BANCO',
       value: transaction.account?.name,
-      icon: <Building2 size={12} />,
+      icon: <Landmark className="w-3 h-3" />,
       show: true,
     },
     {
       label: 'CARTÃO',
       value: transaction.creditCard?.name,
-      icon: <CreditCard size={12} />,
+      icon: <CreditCard className="w-3 h-3" />,
       show: !!transaction.creditCard,
     },
     {
       label: dateLabel,
       value: formatDateShort(displayDate),
-      icon: <Calendar size={12} />,
+      icon: <Calendar className="w-3 h-3" />,
       show: true,
     },
   ].filter(block => block.show)
 
   return (
     <div
-      className={`${styles.cardWrapper} ${isPaid ? styles.paid : ''}`}
+      className={`py-2 ${isPaid ? 'opacity-75' : ''}`}
       data-testid="transaction-card"
     >
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <div className={styles.titleRow}>
-            <span className={`${styles.statusDot} ${isPaid ? styles.paidDot : styles.pendingDot}`} />
-            <h3 className={styles.title}>{transaction.description}</h3>
-            <span className={styles.statusPill}>
-              Status: {isPaid ? 'Pago' : 'Pendente'}
-            </span>
+      <div className="bg-white rounded-[18px] p-4 md:p-5 shadow-sm border border-gray-100">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isPaid ? 'bg-green-500' : 'bg-red-500'}`} />
+              <h3 className="text-base font-semibold text-gray-800 truncate">
+                {transaction.description}
+              </h3>
+              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                Status: {isPaid ? 'Pago' : 'Pendente'}
+              </span>
+            </div>
+
+            <div className="flex items-center mt-3 flex-wrap gap-y-2">
+              {infoBlocks.map((block, index) => (
+                <div key={block.label} className="flex items-center">
+                  {index > 0 && (
+                    <div className="w-px h-6 bg-gray-200 mx-3" />
+                  )}
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1 text-gray-400">
+                      {block.icon}
+                      <span className="text-[10px] font-medium uppercase tracking-wide">
+                        {block.label}
+                      </span>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {block.value}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex-1 hidden md:block" />
+
+              <div
+                className="text-xl md:text-2xl font-bold text-red-700 whitespace-nowrap md:ml-4"
+                data-testid="transaction-amount"
+              >
+                -{formatCurrency(transaction.amount)}
+              </div>
+            </div>
+
+            {transaction.installmentNumber && transaction.totalInstallments && (
+              <div
+                className="inline-flex items-center gap-1 mt-3 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium"
+                data-testid="installment-info"
+              >
+                <ShoppingCart className="w-3 h-3" />
+                <span>{transaction.installmentNumber}/{transaction.totalInstallments}x</span>
+              </div>
+            )}
+
+            {transaction.notes && (
+              <div
+                className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-500 break-words"
+                data-testid="transaction-notes"
+              >
+                {transaction.notes}
+              </div>
+            )}
           </div>
 
-          <div className={styles.actions}>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
-              className={`${styles.actionButton} ${styles.checkButton} ${isPaid ? styles.paidButton : ''}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                isPaid
+                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-gray-100 text-green-600 border-2 border-green-500 hover:bg-green-50'
+              }`}
               onClick={handleTogglePaid}
               disabled={isToggling}
               aria-label={isPaid ? 'Marcar como não pago' : 'Marcar como pago'}
               data-testid="toggle-paid-button"
-              title={isPaid ? 'Marcar como não pago' : 'Marcar como pago'}
+              title={isPaid ? 'Marcar como não pago' : 'Marcar como Pago'}
               type="button"
             >
-              <Check size={14} strokeWidth={2.5} />
+              <Check className="w-4 h-4" strokeWidth={2.5} />
             </button>
 
             <button
-              className={`${styles.actionButton} ${styles.editButton}`}
+              className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
               onClick={handleEdit}
               aria-label="Editar transação"
               data-testid="edit-button"
               title="Editar transação"
               type="button"
             >
-              <Pencil size={14} />
+              <Pencil className="w-4 h-4" />
             </button>
 
             <button
-              className={`${styles.actionButton} ${styles.deleteButton}`}
+              className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
               onClick={handleDelete}
               aria-label="Excluir transação"
               data-testid="delete-button"
               title="Excluir transação"
               type="button"
             >
-              <Trash2 size={14} />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className={styles.infoRow}>
-          {infoBlocks.map((block, index) => (
-            <div key={block.label} className={styles.infoBlock}>
-              {index > 0 && <div className={styles.separator} />}
-              <div className={styles.infoContent}>
-                <div className={styles.infoHeader}>
-                  {block.icon}
-                  <span className={styles.infoLabel}>{block.label}</span>
-                </div>
-                <div className={styles.infoValue}>{block.value}</div>
-              </div>
-            </div>
-          ))}
-
-          <div className={styles.spacer} />
-
-          <div
-            className={styles.amount}
-            data-testid="transaction-amount"
-          >
+        <div className="md:hidden mt-3 pt-3 border-t border-gray-100">
+          <div className="text-xl font-bold text-red-700" data-testid="transaction-amount-mobile">
             -{formatCurrency(transaction.amount)}
           </div>
         </div>
-
-        {transaction.installmentNumber && transaction.totalInstallments && (
-          <div className={styles.installmentRow} data-testid="installment-info">
-            <ShoppingCart size={12} />
-            <span>{transaction.installmentNumber}/{transaction.totalInstallments}x</span>
-          </div>
-        )}
-
-        {transaction.notes && (
-          <div className={styles.notes} data-testid="transaction-notes">
-            {transaction.notes}
-          </div>
-        )}
       </div>
     </div>
   )
