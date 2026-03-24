@@ -1,222 +1,249 @@
-.transactionCard {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
+.cardWrapper {
+  padding: 8px 0;
+}
+
+.card {
   background-color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  position: relative;
-
-  &:hover {
-    border-color: #d1d5db;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-  }
-
-  &.paid {
-    opacity: 0.75;
-  }
+  border-radius: 18px;
+  padding: 18px 22px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
 }
 
-.typeIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  flex-shrink: 0;
-
-  &.income {
-    background-color: #dcfce7;
-    color: #16a34a;
-  }
-
-  &.expense {
-    background-color: #fee2e2;
-    color: #dc2626;
-  }
-}
-
-.content {
-  flex: 1;
-  min-width: 0;
+.cardWrapper.paid .card {
+  opacity: 0.75;
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pendingDot {
+  background-color: #ef4444;
+}
+
+.paidDot {
+  background-color: #22c55e;
 }
 
 .title {
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: #1f2937;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.metaItem {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.metaDot {
-  color: #d1d5db;
-}
-
-.valueContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.value {
-  font-size: 20px;
-  font-weight: 700;
-
-  &.income {
-    color: #16a34a;
-  }
-
-  &.expense {
-    color: #dc2626;
-  }
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.dateBadge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  font-size: 12px;
+.statusPill {
+  font-size: 11px;
   font-weight: 500;
-  color: #374151;
-}
-
-.dateBadgeIcon {
-  color: #9ca3af;
-}
-
-.dateBadgeLabel {
   color: #6b7280;
-}
-
-.installmentBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  background-color: #dbeafe;
+  background-color: #f3f4f6;
+  padding: 3px 8px;
   border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #1d4ed8;
-}
-
-.notes {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
-  font-size: 14px;
-  color: #6b7280;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .actions {
-  position: absolute;
-  right: 12px;
-  top: 12px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.transactionCard:hover .actions {
-  opacity: 1;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .actionButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: none;
-  background: transparent;
-  border-radius: 6px;
+  background-color: #f3f4f6;
+  border-radius: 8px;
   cursor: pointer;
   color: #6b7280;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 
   &:hover {
-    background-color: #f3f4f6;
+    background-color: #e5e7eb;
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+}
 
-  &.togglePaid {
+.checkButton {
+  border: 1.5px solid #22c55e;
+
+  &.paidButton {
+    background-color: #22c55e;
+    color: #ffffff;
+
     &:hover {
-      color: #16a34a;
+      background-color: #16a34a;
     }
   }
 
-  &.edit {
-    &:hover {
-      color: #2563eb;
-    }
-  }
-
-  &.delete {
-    &:hover {
-      color: #dc2626;
-      background-color: #fef2f2;
-    }
+  &:hover:not(.paidButton) {
+    background-color: #dcfce7;
   }
 }
 
-.loadingSpinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #e5e7eb;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.editButton:hover {
+  color: #2563eb;
+  background-color: #dbeafe;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.deleteButton:hover {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.infoBlock {
+  display: flex;
+  align-items: center;
+}
+
+.separator {
+  width: 1px;
+  height: 28px;
+  background-color: #e5e7eb;
+  margin: 0 12px;
+}
+
+.infoContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #9ca3af;
+}
+
+.infoLabel {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: #b91c1c;
+  white-space: nowrap;
+}
+
+.installmentRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 4px 8px;
+  background-color: #eff6ff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3b82f6;
+}
+
+.notes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  font-size: 13px;
+  color: #6b7280;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 16px;
+  }
+
+  .infoRow {
+    gap: 8px;
+  }
+
+  .separator {
+    display: none;
+  }
+
+  .infoBlock {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+  }
+
+  .spacer {
+    display: none;
+  }
+
+  .amount {
+    flex: 1 1 100%;
+    text-align: right;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f3f4f6;
+  }
+
+  .titleRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .actions {
+    align-self: flex-end;
+    margin-top: -36px;
   }
 }
