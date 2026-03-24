@@ -1,43 +1,19 @@
 import PropTypes from 'prop-types'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CheckCircle2, Circle, Edit, Trash2, CreditCard, Calendar } from 'lucide-react'
+import { Check, Pencil, Trash2, CreditCard, Building2, ShoppingCart, Calendar, Tag } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import styles from './TransactionCard.module.scss'
 
-const ArrowUpIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    width="20"
-    height="20"
-  >
-    <line x1="12" y1="19" x2="12" y2="5" />
-    <polyline points="5 12 12 5 19 12" />
-  </svg>
-)
+const monthShortFormatter = new Intl.DateTimeFormat('pt-BR', {
+  month: 'short',
+})
 
-const ArrowDownIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    width="20"
-    height="20"
-  >
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <polyline points="19 12 12 19 5 12" />
-  </svg>
-)
+function formatDateShort(dateStr) {
+  const date = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr
+  const month = monthShortFormatter.format(date)
+  return format(date, `dd '${month}' yyyy`).replace(month.charAt(0), month.charAt(0).toUpperCase())
+}
 
 export function TransactionCard({
   transaction,
@@ -46,11 +22,7 @@ export function TransactionCard({
   onDelete,
   isToggling = false,
 }) {
-  const isIncome = transaction.type === 'INCOME'
   const isPaid = transaction.paid
-
-  const displayDate = transaction.purchaseDate || transaction.date
-  const dateLabel = transaction.purchaseDate ? 'Compra:' : 'Venc:'
 
   const handleTogglePaid = () => {
     if (onTogglePaid) {
@@ -70,109 +42,124 @@ export function TransactionCard({
     }
   }
 
+  const displayDate = transaction.purchaseDate || transaction.date
+  const dateLabel = transaction.purchaseDate ? 'COMPRA' : 'VENCIMENTO'
+
+  const infoBlocks = [
+    {
+      label: 'CATEGORIA',
+      value: transaction.category?.name,
+      icon: <Tag size={12} />,
+      show: true,
+    },
+    {
+      label: 'BANCO',
+      value: transaction.account?.name,
+      icon: <Building2 size={12} />,
+      show: true,
+    },
+    {
+      label: 'CARTÃO',
+      value: transaction.creditCard?.name,
+      icon: <CreditCard size={12} />,
+      show: !!transaction.creditCard,
+    },
+    {
+      label: dateLabel,
+      value: formatDateShort(displayDate),
+      icon: <Calendar size={12} />,
+      show: true,
+    },
+  ].filter(block => block.show)
+
   return (
     <div
-      className={`${styles.transactionCard} ${isPaid ? styles.paid : ''}`}
+      className={`${styles.cardWrapper} ${isPaid ? styles.paid : ''}`}
       data-testid="transaction-card"
     >
-      <div className={styles.typeIcon}>
-        {isIncome ? <ArrowUpIcon /> : <ArrowDownIcon />}
-      </div>
-
-      <div className={styles.content}>
+      <div className={styles.card}>
         <div className={styles.header}>
-          <div>
-            <h3 className={styles.title} title={transaction.description}>
-              {transaction.description}
-            </h3>
-
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>{transaction.category.name}</span>
-              <span className={styles.metaDot}>•</span>
-              <span className={styles.metaItem}>{transaction.account.name}</span>
-              {transaction.creditCard && (
-                <>
-                  <span className={styles.metaDot}>•</span>
-                  <span className={styles.metaItem}>
-                    <CreditCard size={12} />
-                    {transaction.creditCard.name}
-                  </span>
-                </>
-              )}
-            </div>
+          <div className={styles.titleRow}>
+            <span className={`${styles.statusDot} ${isPaid ? styles.paidDot : styles.pendingDot}`} />
+            <h3 className={styles.title}>{transaction.description}</h3>
+            <span className={styles.statusPill}>
+              Status: {isPaid ? 'Pago' : 'Pendente'}
+            </span>
           </div>
 
-          <div className={styles.valueContainer}>
-            <div
-              className={`${styles.value} ${isIncome ? styles.income : styles.expense}`}
-              data-testid="transaction-amount"
+          <div className={styles.actions}>
+            <button
+              className={`${styles.actionButton} ${styles.checkButton} ${isPaid ? styles.paidButton : ''}`}
+              onClick={handleTogglePaid}
+              disabled={isToggling}
+              aria-label={isPaid ? 'Marcar como não pago' : 'Marcar como pago'}
+              data-testid="toggle-paid-button"
+              title={isPaid ? 'Marcar como não pago' : 'Marcar como pago'}
+              type="button"
             >
-              {isIncome ? '+' : '-'}
-              {formatCurrency(transaction.amount)}
+              <Check size={14} strokeWidth={2.5} />
+            </button>
+
+            <button
+              className={`${styles.actionButton} ${styles.editButton}`}
+              onClick={handleEdit}
+              aria-label="Editar transação"
+              data-testid="edit-button"
+              title="Editar transação"
+              type="button"
+            >
+              <Pencil size={14} />
+            </button>
+
+            <button
+              className={`${styles.actionButton} ${styles.deleteButton}`}
+              onClick={handleDelete}
+              aria-label="Excluir transação"
+              data-testid="delete-button"
+              title="Excluir transação"
+              type="button"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.infoRow}>
+          {infoBlocks.map((block, index) => (
+            <div key={block.label} className={styles.infoBlock}>
+              {index > 0 && <div className={styles.separator} />}
+              <div className={styles.infoContent}>
+                <div className={styles.infoHeader}>
+                  {block.icon}
+                  <span className={styles.infoLabel}>{block.label}</span>
+                </div>
+                <div className={styles.infoValue}>{block.value}</div>
+              </div>
             </div>
+          ))}
+
+          <div className={styles.spacer} />
+
+          <div
+            className={styles.amount}
+            data-testid="transaction-amount"
+          >
+            -{formatCurrency(transaction.amount)}
           </div>
         </div>
 
-        <div className={styles.badges}>
-          <div className={styles.dateBadge} data-testid="date-badge">
-            <Calendar className={styles.dateBadgeIcon} size={14} />
-            <span>
-              <span className={styles.dateBadgeLabel}>{dateLabel}</span>{' '}
-              {format(new Date(displayDate), 'dd/MM/yyyy', { locale: ptBR })}
-            </span>
+        {transaction.installmentNumber && transaction.totalInstallments && (
+          <div className={styles.installmentRow} data-testid="installment-info">
+            <ShoppingCart size={12} />
+            <span>{transaction.installmentNumber}/{transaction.totalInstallments}x</span>
           </div>
-
-          {transaction.installmentNumber && transaction.totalInstallments && (
-            <span className={styles.installmentBadge} data-testid="installment-info">
-              {transaction.installmentNumber}/{transaction.totalInstallments}
-            </span>
-          )}
-        </div>
+        )}
 
         {transaction.notes && (
           <div className={styles.notes} data-testid="transaction-notes">
             {transaction.notes}
           </div>
         )}
-      </div>
-
-      <div className={styles.actions}>
-        <button
-          className={`${styles.actionButton} ${styles.togglePaid}`}
-          onClick={handleTogglePaid}
-          disabled={isToggling}
-          aria-label={isPaid ? 'Marcar como não pago' : 'Marcar como pago'}
-          data-testid="toggle-paid-button"
-          type="button"
-        >
-          {isToggling ? (
-            <div className={styles.loadingSpinner} />
-          ) : isPaid ? (
-            <CheckCircle2 size={16} color="#16a34a" />
-          ) : (
-            <Circle size={16} color="#9ca3af" />
-          )}
-        </button>
-
-        <button
-          className={`${styles.actionButton} ${styles.edit}`}
-          onClick={handleEdit}
-          aria-label="Editar transação"
-          data-testid="edit-button"
-          type="button"
-        >
-          <Edit size={14} />
-        </button>
-
-        <button
-          className={`${styles.actionButton} ${styles.delete}`}
-          onClick={handleDelete}
-          aria-label="Excluir transação"
-          data-testid="delete-button"
-          type="button"
-        >
-          <Trash2 size={14} />
-        </button>
       </div>
     </div>
   )

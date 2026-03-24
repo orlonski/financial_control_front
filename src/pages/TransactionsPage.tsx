@@ -307,7 +307,7 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="bg-gray-50 rounded-2xl p-4 space-y-4">
           {transactions.map((transaction) => (
             <TransactionCard
               key={transaction.id}

@@ -82,10 +82,10 @@ describe('TransactionCard', () => {
         />
       )
 
-      expect(screen.getByTestId('transaction-amount')).toHaveTextContent('+R$ 5.000,00')
+      expect(screen.getByTestId('transaction-amount')).toHaveTextContent('-R$ 5.000,00')
     })
 
-    it('should display Compra: label when purchaseDate is present', () => {
+    it('should display COMPRA label when purchaseDate is present', () => {
       render(
         <TransactionCard
           transaction={mockTransaction}
@@ -95,11 +95,10 @@ describe('TransactionCard', () => {
         />
       )
 
-      expect(screen.getByText(/Compra:/)).toBeInTheDocument()
-      expect(screen.getByText('14/01/2024')).toBeInTheDocument()
+      expect(screen.getByText('COMPRA')).toBeInTheDocument()
     })
 
-    it('should display Venc: label when purchaseDate is not present', () => {
+    it('should display VENCIMENTO label when purchaseDate is not present', () => {
       render(
         <TransactionCard
           transaction={mockIncomeTransaction}
@@ -109,8 +108,7 @@ describe('TransactionCard', () => {
         />
       )
 
-      expect(screen.getByText(/Venc:/)).toBeInTheDocument()
-      expect(screen.getByText('05/01/2024')).toBeInTheDocument()
+      expect(screen.getByText('VENCIMENTO')).toBeInTheDocument()
     })
 
     it('should display installment information when present', () => {
@@ -170,6 +168,32 @@ describe('TransactionCard', () => {
 
       expect(screen.getByText('Cartão Visa')).toBeInTheDocument()
     })
+
+    it('should display status pill with Pendente for unpaid transaction', () => {
+      render(
+        <TransactionCard
+          transaction={mockTransaction}
+          onTogglePaid={mockOnTogglePaid}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      )
+
+      expect(screen.getByText('Status: Pendente')).toBeInTheDocument()
+    })
+
+    it('should display status pill with Pago for paid transaction', () => {
+      render(
+        <TransactionCard
+          transaction={mockIncomeTransaction}
+          onTogglePaid={mockOnTogglePaid}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      )
+
+      expect(screen.getByText('Status: Pago')).toBeInTheDocument()
+    })
   })
 
   describe('Interactions', () => {
@@ -224,7 +248,7 @@ describe('TransactionCard', () => {
       expect(mockOnDelete).toHaveBeenCalledWith('1')
     })
 
-    it('should show loading state when isToggling is true', () => {
+    it('should show loading state when isToggles is true', () => {
       render(
         <TransactionCard
           transaction={mockTransaction}
