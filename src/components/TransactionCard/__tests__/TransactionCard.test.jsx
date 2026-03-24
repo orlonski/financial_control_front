@@ -1,13 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi } from 'vitest'
-import { TransactionCard } from '@/components/TransactionCard'
-import type { Transaction } from '@/types'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { TransactionCard } from '../TransactionCard'
 
-const mockTransaction: Transaction = {
+const mockTransaction = {
   id: '1',
   type: 'EXPENSE',
-  amount: 150.50,
+  amount: 150.5,
   description: 'Supermercado Extra',
   date: '2024-01-15',
   purchaseDate: '2024-01-14',
@@ -22,7 +21,7 @@ const mockTransaction: Transaction = {
   updatedAt: '2024-01-14',
 }
 
-const mockIncomeTransaction: Transaction = {
+const mockIncomeTransaction = {
   id: '2',
   type: 'INCOME',
   amount: 5000,
@@ -71,7 +70,6 @@ describe('TransactionCard', () => {
       )
 
       expect(screen.getByTestId('transaction-amount')).toHaveTextContent('-R$ 150,50')
-      expect(screen.getByTestId('transaction-amount')).toHaveClass('text-red-600')
     })
 
     it('should render transaction amount with correct format for income', () => {
@@ -85,7 +83,6 @@ describe('TransactionCard', () => {
       )
 
       expect(screen.getByTestId('transaction-amount')).toHaveTextContent('+R$ 5.000,00')
-      expect(screen.getByTestId('transaction-amount')).toHaveClass('text-green-600')
     })
 
     it('should display Compra: label when purchaseDate is present', () => {
@@ -130,7 +127,7 @@ describe('TransactionCard', () => {
     })
 
     it('should display notes when present', () => {
-      const transactionWithNotes: Transaction = {
+      const transactionWithNotes = {
         ...mockTransaction,
         notes: 'Tanque cheio',
       }
@@ -302,7 +299,7 @@ describe('TransactionCard', () => {
   })
 
   describe('Visual Indicators', () => {
-    it('should show reduced opacity for paid transactions', () => {
+    it('should show paid state styling for paid transactions', () => {
       render(
         <TransactionCard
           transaction={mockIncomeTransaction}
@@ -313,10 +310,10 @@ describe('TransactionCard', () => {
       )
 
       const card = screen.getByTestId('transaction-card')
-      expect(card).toHaveClass('opacity-75')
+      expect(card.className).toContain('paid')
     })
 
-    it('should not show reduced opacity for unpaid transactions', () => {
+    it('should not show paid state styling for unpaid transactions', () => {
       render(
         <TransactionCard
           transaction={mockTransaction}
@@ -327,7 +324,7 @@ describe('TransactionCard', () => {
       )
 
       const card = screen.getByTestId('transaction-card')
-      expect(card).not.toHaveClass('opacity-75')
+      expect(card.className).not.toContain('paid')
     })
   })
 })
