@@ -30,7 +30,7 @@ describe('BottomNavigationBar Component', () => {
   it('should render all navigation items', () => {
     renderWithRouter()
 
-    expect(screen.getByLabelText('Home')).toBeInTheDocument()
+    expect(screen.getByLabelText('Início')).toBeInTheDocument()
     expect(screen.getByLabelText('Contas')).toBeInTheDocument()
     expect(screen.getByLabelText('Novo')).toBeInTheDocument()
     expect(screen.getByLabelText('Relatórios')).toBeInTheDocument()
@@ -65,10 +65,10 @@ describe('BottomNavigationBar Component', () => {
     expect(nav).toHaveClass('z-40')
   })
 
-  it('should navigate to dashboard when Home is clicked', () => {
+  it('should navigate to dashboard when Início is clicked', () => {
     renderWithRouter('/accounts')
 
-    const homeButton = screen.getByLabelText('Home')
+    const homeButton = screen.getByLabelText('Início')
     fireEvent.click(homeButton)
 
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
@@ -136,7 +136,7 @@ describe('BottomNavigationBar Component', () => {
   it('should display labels for navigation items', () => {
     renderWithRouter()
 
-    expect(screen.getByText('Home')).toBeInTheDocument()
+    expect(screen.getByText('Início')).toBeInTheDocument()
     expect(screen.getByText('Contas')).toBeInTheDocument()
     expect(screen.getByText('Relatórios')).toBeInTheDocument()
     expect(screen.getByText('Extrato')).toBeInTheDocument()
@@ -169,7 +169,7 @@ describe('BottomNavigationBar Component', () => {
   it('should highlight active item with primary color', () => {
     renderWithRouter('/dashboard')
 
-    const homeButton = screen.getByLabelText('Home')
+    const homeButton = screen.getByLabelText('Início')
     expect(homeButton).toHaveClass('text-primary')
   })
 
@@ -190,14 +190,14 @@ describe('BottomNavigationBar Component', () => {
   it('should not have aria-current on inactive pages', () => {
     renderWithRouter('/accounts')
 
-    const homeButton = screen.getByLabelText('Home')
+    const homeButton = screen.getByLabelText('Início')
     expect(homeButton).not.toHaveAttribute('aria-current')
   })
 
   it('should have transition effects on buttons', () => {
     renderWithRouter()
 
-    const homeButton = screen.getByLabelText('Home')
+    const homeButton = screen.getByLabelText('Início')
     expect(homeButton).toHaveClass('transition-colors')
   })
 
