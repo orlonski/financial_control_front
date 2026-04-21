@@ -24,6 +24,23 @@ const transactionSchema = z.object({
 
 type TransactionForm = z.infer<typeof transactionSchema>
 
+// Explicit tab order: every focusable element gets a number.
+// This overrides the browser's DOM order and guarantees correct Tab flow.
+const TAB = {
+  RECEITA: 1,
+  DESPESA: 2,
+  CONTA: 3,
+  CATEGORIA: 4,
+  DESCRICAO: 5,
+  CARTAO: 6,
+  DATA_COMPRA: 7,
+  VALOR: 8,
+  DATA: 9,
+  OBSERVACOES: 10,
+  CANCELAR: 11,
+  CRIAR: 12,
+}
+
 export default function NewTransactionPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -107,30 +124,45 @@ export default function NewTransactionPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Tipo: Receita / Despesa */}
-            <div className="grid grid-cols-2 gap-4">
-              <Button
+            {/* Tab 1-2: Tipo Receita / Despesa */}
+            <div className="grid grid-cols-2 gap-4" role="group" aria-label="Tipo de transação">
+              <button
                 type="button"
-                variant={selectedType === 'INCOME' ? 'default' : 'outline'}
+                tabIndex={TAB.RECEITA}
                 onClick={() => setValue('type', 'INCOME')}
+                className={`
+                  h-10 rounded-md border text-sm font-medium transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+                  ${selectedType === 'INCOME'
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}
+                `}
               >
                 Receita
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant={selectedType === 'EXPENSE' ? 'default' : 'outline'}
+                tabIndex={TAB.DESPESA}
                 onClick={() => setValue('type', 'EXPENSE')}
+                className={`
+                  h-10 rounded-md border text-sm font-medium transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+                  ${selectedType === 'EXPENSE'
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}
+                `}
               >
                 Despesa
-              </Button>
+              </button>
             </div>
 
-            {/* 1. Conta */}
+            {/* Tab 3: Conta */}
             <SearchableSelect
               label="Conta"
+              tabIndex={TAB.CONTA}
               options={accounts.map(account => ({
                 value: account.id,
-                label: account.name
+                label: account.name,
               }))}
               value={watch('accountId')}
               onChange={(value) => setValue('accountId', value)}
@@ -138,12 +170,13 @@ export default function NewTransactionPage() {
               error={errors.accountId?.message}
             />
 
-            {/* 2. Categoria */}
+            {/* Tab 4: Categoria */}
             <SearchableSelect
               label="Categoria"
+              tabIndex={TAB.CATEGORIA}
               options={filteredCategories.map(category => ({
                 value: category.id,
-                label: category.name
+                label: category.name,
               }))}
               value={watch('categoryId')}
               onChange={(value) => setValue('categoryId', value)}
@@ -151,23 +184,25 @@ export default function NewTransactionPage() {
               error={errors.categoryId?.message}
             />
 
-            {/* 3. Descrição */}
+            {/* Tab 5: Descrição */}
             <Input
               label="Descrição"
               placeholder="Ex: Almoço no restaurante"
+              tabIndex={TAB.DESCRICAO}
               {...register('description')}
               error={errors.description?.message}
             />
 
-            {/* 4. Cartão de Crédito */}
+            {/* Tab 6: Cartão de Crédito */}
             <SearchableSelect
               label="Cartão de Crédito (opcional)"
+              tabIndex={TAB.CARTAO}
               options={[
                 { value: '', label: 'Não usar cartão' },
                 ...creditCards.map(card => ({
                   value: card.id,
-                  label: card.name
-                }))
+                  label: card.name,
+                })),
               ]}
               value={watch('creditCardId') || ''}
               onChange={(value) => setValue('creditCardId', value)}
@@ -175,38 +210,42 @@ export default function NewTransactionPage() {
               error={errors.creditCardId?.message}
             />
 
-            {/* 5. Data da compra (só quando cartão está selecionado) */}
+            {/* Tab 7: Data da compra — only when card is selected */}
             {selectedCreditCardId && (
               <Input
                 label="Data da compra (opcional)"
                 type="date"
+                tabIndex={TAB.DATA_COMPRA}
                 {...register('purchaseDate')}
                 error={errors.purchaseDate?.message}
               />
             )}
 
-            {/* 6. Valor */}
+            {/* Tab 8: Valor */}
             <Input
               label="Valor"
               type="number"
               step="0.01"
               placeholder="0,00"
+              tabIndex={TAB.VALOR}
               {...register('amount', { valueAsNumber: true })}
               error={errors.amount?.message}
             />
 
-            {/* 7. Data */}
+            {/* Tab 9: Data */}
             <Input
               label="Data"
               type="date"
+              tabIndex={TAB.DATA}
               {...register('date')}
               error={errors.date?.message}
             />
 
-            {/* 8. Observações (sempre por último antes dos botões) */}
+            {/* Tab 10: Observações */}
             <Textarea
               label="Observações (opcional)"
               placeholder="Observações adicionais..."
+              tabIndex={TAB.OBSERVACOES}
               {...register('notes')}
               error={errors.notes?.message}
             />
@@ -219,11 +258,12 @@ export default function NewTransactionPage() {
               </div>
             )}
 
-            {/* Botões: Cancelar / Criar Transação */}
+            {/* Tab 11-12: Botões */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
+                tabIndex={TAB.CANCELAR}
                 onClick={() => navigate('/transactions')}
                 className="flex-1"
               >
@@ -231,6 +271,7 @@ export default function NewTransactionPage() {
               </Button>
               <Button
                 type="submit"
+                tabIndex={TAB.CRIAR}
                 disabled={createMutation.isPending}
                 className="flex-1"
               >
