@@ -24,6 +24,24 @@ const transactionSchema = z.object({
 
 type TransactionForm = z.infer<typeof transactionSchema>
 
+// Explicit Tab order for the form fields
+// This maps to: 1=Receita, 2=Despesa, 3=Conta, 4=Categoria, 5=Descricao,
+// 6=Cartao, 7=DataCompra, 8=Valor, 9=Data, 10=Observacoes, 11=Cancelar, 12=Criar
+const TAB_ORDER = {
+  RECEITA: 1,
+  DESPESA: 2,
+  CONTA: 3,
+  CATEGORIA: 4,
+  DESCRICAO: 5,
+  CARTAO: 6,
+  DATA_COMPRA: 7,
+  VALOR: 8,
+  DATA: 9,
+  OBSERVACOES: 10,
+  CANCELAR: 11,
+  CRIAR: 12,
+}
+
 export default function NewTransactionPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -79,7 +97,6 @@ export default function NewTransactionPage() {
 
   const selectedType = watch('type')
   const selectedCreditCardId = watch('creditCardId')
-
   const filteredCategories = categories.filter(cat => cat.type === selectedType)
 
   const onSubmit = (data: TransactionForm) => {
@@ -107,52 +124,51 @@ export default function NewTransactionPage() {
           <CardTitle>Informações da Transação</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Button
+          {/* The form uses explicit tabIndex to guarantee Tab order, independent of visual layout */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4"
+            aria-label="Formulário de nova transação"
+          >
+            {/* 1. Tipo: Receita / Despesa */}
+            <div className="grid grid-cols-2 gap-4" role="group" aria-label="Tipo de transação">
+              <button
                 type="button"
-                variant={selectedType === 'INCOME' ? 'default' : 'outline'}
+                tabIndex={TAB_ORDER.RECEITA}
                 onClick={() => setValue('type', 'INCOME')}
+                className={`
+                  h-10 rounded-md border text-sm font-medium transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+                  ${selectedType === 'INCOME'
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}
+                `}
               >
                 Receita
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant={selectedType === 'EXPENSE' ? 'default' : 'outline'}
+                tabIndex={TAB_ORDER.DESPESA}
                 onClick={() => setValue('type', 'EXPENSE')}
+                className={`
+                  h-10 rounded-md border text-sm font-medium transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+                  ${selectedType === 'EXPENSE'
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}
+                `}
               >
                 Despesa
-              </Button>
+              </button>
             </div>
 
-            <Input
-              label="Valor"
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-              {...register('amount', { valueAsNumber: true })}
-              error={errors.amount?.message}
-            />
-
-            <Input
-              label="Data"
-              type="date"
-              {...register('date')}
-              error={errors.date?.message}
-            />
-
-            <Input
-              label="Descrição"
-              placeholder="Ex: Almoço no restaurante"
-              {...register('description')}
-              error={errors.description?.message}
-            />
-
+            {/* 2. Conta */}
             <SearchableSelect
               label="Conta"
+              tabIndex={TAB_ORDER.CONTA}
               options={accounts.map(account => ({
                 value: account.id,
-                label: account.name
+                label: account.name,
               }))}
               value={watch('accountId')}
               onChange={(value) => setValue('accountId', value)}
@@ -160,11 +176,13 @@ export default function NewTransactionPage() {
               error={errors.accountId?.message}
             />
 
+            {/* 3. Categoria */}
             <SearchableSelect
               label="Categoria"
+              tabIndex={TAB_ORDER.CATEGORIA}
               options={filteredCategories.map(category => ({
                 value: category.id,
-                label: category.name
+                label: category.name,
               }))}
               value={watch('categoryId')}
               onChange={(value) => setValue('categoryId', value)}
@@ -172,14 +190,25 @@ export default function NewTransactionPage() {
               error={errors.categoryId?.message}
             />
 
+            {/* 4. Descrição */}
+            <Input
+              label="Descrição"
+              placeholder="Ex: Almoço no restaurante"
+              tabIndex={TAB_ORDER.DESCRICAO}
+              {...register('description')}
+              error={errors.description?.message}
+            />
+
+            {/* 5. Cartão de Crédito */}
             <SearchableSelect
               label="Cartão de Crédito (opcional)"
+              tabIndex={TAB_ORDER.CARTAO}
               options={[
                 { value: '', label: 'Não usar cartão' },
                 ...creditCards.map(card => ({
                   value: card.id,
-                  label: card.name
-                }))
+                  label: card.name,
+                })),
               ]}
               value={watch('creditCardId') || ''}
               onChange={(value) => setValue('creditCardId', value)}
@@ -187,18 +216,42 @@ export default function NewTransactionPage() {
               error={errors.creditCardId?.message}
             />
 
+            {/* 6. Data da compra (only when card is selected) */}
             {selectedCreditCardId && (
               <Input
                 label="Data da compra (opcional)"
                 type="date"
+                tabIndex={TAB_ORDER.DATA_COMPRA}
                 {...register('purchaseDate')}
                 error={errors.purchaseDate?.message}
               />
             )}
 
+            {/* 7. Valor */}
+            <Input
+              label="Valor"
+              type="number"
+              step="0.01"
+              placeholder="0,00"
+              tabIndex={TAB_ORDER.VALOR}
+              {...register('amount', { valueAsNumber: true })}
+              error={errors.amount?.message}
+            />
+
+            {/* 8. Data */}
+            <Input
+              label="Data"
+              type="date"
+              tabIndex={TAB_ORDER.DATA}
+              {...register('date')}
+              error={errors.date?.message}
+            />
+
+            {/* 9. Observações (always last before buttons) */}
             <Textarea
               label="Observações (opcional)"
               placeholder="Observações adicionais..."
+              tabIndex={TAB_ORDER.OBSERVACOES}
               {...register('notes')}
               error={errors.notes?.message}
             />
@@ -211,10 +264,12 @@ export default function NewTransactionPage() {
               </div>
             )}
 
+            {/* 10-11. Botões: Cancelar / Criar */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
+                tabIndex={TAB_ORDER.CANCELAR}
                 onClick={() => navigate('/transactions')}
                 className="flex-1"
               >
@@ -222,6 +277,7 @@ export default function NewTransactionPage() {
               </Button>
               <Button
                 type="submit"
+                tabIndex={TAB_ORDER.CRIAR}
                 disabled={createMutation.isPending}
                 className="flex-1"
               >
