@@ -79,7 +79,6 @@ export default function NewTransactionPage() {
 
   const selectedType = watch('type')
   const selectedCreditCardId = watch('creditCardId')
-
   const filteredCategories = categories.filter(cat => cat.type === selectedType)
 
   const onSubmit = (data: TransactionForm) => {
@@ -108,6 +107,7 @@ export default function NewTransactionPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Tipo: Receita / Despesa */}
             <div className="grid grid-cols-2 gap-4">
               <Button
                 type="button"
@@ -125,29 +125,7 @@ export default function NewTransactionPage() {
               </Button>
             </div>
 
-            <Input
-              label="Valor"
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-              {...register('amount', { valueAsNumber: true })}
-              error={errors.amount?.message}
-            />
-
-            <Input
-              label="Data"
-              type="date"
-              {...register('date')}
-              error={errors.date?.message}
-            />
-
-            <Input
-              label="Descrição"
-              placeholder="Ex: Almoço no restaurante"
-              {...register('description')}
-              error={errors.description?.message}
-            />
-
+            {/* 1. Conta */}
             <SearchableSelect
               label="Conta"
               options={accounts.map(account => ({
@@ -160,6 +138,7 @@ export default function NewTransactionPage() {
               error={errors.accountId?.message}
             />
 
+            {/* 2. Categoria */}
             <SearchableSelect
               label="Categoria"
               options={filteredCategories.map(category => ({
@@ -172,6 +151,15 @@ export default function NewTransactionPage() {
               error={errors.categoryId?.message}
             />
 
+            {/* 3. Descrição */}
+            <Input
+              label="Descrição"
+              placeholder="Ex: Almoço no restaurante"
+              {...register('description')}
+              error={errors.description?.message}
+            />
+
+            {/* 4. Cartão de Crédito */}
             <SearchableSelect
               label="Cartão de Crédito (opcional)"
               options={[
@@ -187,6 +175,7 @@ export default function NewTransactionPage() {
               error={errors.creditCardId?.message}
             />
 
+            {/* 5. Data da compra (só quando cartão está selecionado) */}
             {selectedCreditCardId && (
               <Input
                 label="Data da compra (opcional)"
@@ -196,6 +185,25 @@ export default function NewTransactionPage() {
               />
             )}
 
+            {/* 6. Valor */}
+            <Input
+              label="Valor"
+              type="number"
+              step="0.01"
+              placeholder="0,00"
+              {...register('amount', { valueAsNumber: true })}
+              error={errors.amount?.message}
+            />
+
+            {/* 7. Data */}
+            <Input
+              label="Data"
+              type="date"
+              {...register('date')}
+              error={errors.date?.message}
+            />
+
+            {/* 8. Observações (sempre por último antes dos botões) */}
             <Textarea
               label="Observações (opcional)"
               placeholder="Observações adicionais..."
@@ -211,6 +219,7 @@ export default function NewTransactionPage() {
               </div>
             )}
 
+            {/* Botões: Cancelar / Criar Transação */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 type="button"
